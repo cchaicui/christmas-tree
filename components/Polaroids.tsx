@@ -128,6 +128,9 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
     setError(false);
     
     const loader = new THREE.TextureLoader();
+    // 设置跨域属性以支持 Cloudinary 图片
+    loader.setCrossOrigin('anonymous');
+    
     loader.load(
       data.url,
       (loadedTex) => {
@@ -255,9 +258,9 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
     }
   });
 
-  // 根据照片总数自适应缩放，聚焦时大幅放大
+  // 根据照片总数自适应缩放，聚焦时适度放大
   const baseScale = calculateScale(totalPhotos);
-  const scale = (isHighlighted && isFocusing) ? 5 : baseScale; // 聚焦时固定大小
+  const scale = (isHighlighted && isFocusing) ? 2.5 : baseScale; // 聚焦时放大2.5倍
 
   // 根据宽高比计算照片和卡片尺寸
   const maxPhotoSize = 1.2;
