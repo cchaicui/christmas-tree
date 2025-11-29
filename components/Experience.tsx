@@ -117,8 +117,8 @@ export const Experience: React.FC<ExperienceProps> = ({
         const worldPhotoPos = localPos.clone();
         treeGroupRef.current.localToWorld(worldPhotoPos);
         
-        // 相机位置：更近距离聚焦照片
-        const cameraDistance = 2.5; // 更近的距离
+        // 相机位置：非常近距离聚焦照片，让照片占屏幕50%
+        const cameraDistance = 1.2; // 非常近的距离
         const direction = new THREE.Vector3()
           .copy(worldPhotoPos)
           .sub(new THREE.Vector3(0, worldPhotoPos.y, 0))
