@@ -764,6 +764,12 @@ function getUploadPageHTML() {
     function showStatus(message, type) {
       status.textContent = message;
       status.className = 'status show ' + type;
+      // 成功提示3秒后自动消失
+      if (type === 'success') {
+        setTimeout(() => {
+          status.classList.remove('show');
+        }, 3000);
+      }
     }
 
     // WebSocket 实时更新相册
