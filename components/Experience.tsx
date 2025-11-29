@@ -148,6 +148,11 @@ export const Experience: React.FC<ExperienceProps> = ({
       treeGroupRef.current.rotation.y += delta * 0.1;
     }
     
+    // 聚焦时，树慢慢转回正面
+    if (treeGroupRef.current && focusState !== 'idle') {
+      treeGroupRef.current.rotation.y *= 0.9; // 逐渐归零
+    }
+    
     if (!controlsRef.current) return;
 
     const lerpSpeed = 3; // 稍微加快动画速度
