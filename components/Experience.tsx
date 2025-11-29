@@ -193,11 +193,12 @@ export const Experience: React.FC<ExperienceProps> = ({
         enablePan={false} 
         minPolarAngle={Math.PI / 4} 
         maxPolarAngle={Math.PI / 1.8}
-        minDistance={10}
-        maxDistance={30}
+        minDistance={12}
+        maxDistance={25}
         enableDamping
         dampingFactor={0.05}
         enabled={focusState === 'idle'}
+        target={[0, 0, 0]}
       />
 
       {/* 程序化环境光 - 不需要下载 */}

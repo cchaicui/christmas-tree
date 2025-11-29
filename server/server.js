@@ -260,6 +260,38 @@ function getUploadPageHTML() {
       background: linear-gradient(135deg, #0a1f0a 0%, #1a3a1a 50%, #0d2818 100%);
       min-height: 100vh;
       color: #D4AF37;
+      overflow-x: hidden;
+    }
+    
+    /* 雪花效果 */
+    .snowflakes {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+    .snowflake {
+      position: absolute;
+      top: -20px;
+      color: #fff;
+      font-size: 1rem;
+      text-shadow: 0 0 5px rgba(255,255,255,0.5);
+      animation: fall linear infinite;
+      opacity: 0.8;
+    }
+    @keyframes fall {
+      0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 0.8;
+      }
+      100% {
+        transform: translateY(100vh) rotate(360deg);
+        opacity: 0.3;
+      }
     }
     .header {
       position: fixed;
@@ -358,12 +390,15 @@ function getUploadPageHTML() {
       top: 0;
       height: 100%;
       width: 0%;
-      background: linear-gradient(135deg, #228B22 0%, #32CD32 100%);
+      background: linear-gradient(135deg, #D4AF37 0%, #F5E6BF 100%);
       transition: width 0.3s ease;
       z-index: 1;
     }
+    .btn-primary.uploading {
+      background: rgba(212, 175, 55, 0.3);
+    }
     .btn-primary.success {
-      background: linear-gradient(135deg, #228B22 0%, #32CD32 100%);
+      background: linear-gradient(135deg, #228B22 0%, #32CD32 100%) !important;
     }
     
     .progress-container { display: none; }
@@ -482,6 +517,9 @@ function getUploadPageHTML() {
   <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
+  <!-- 雪花容器 -->
+  <div class="snowflakes" id="snowflakes"></div>
+  
   <div class="header">
     <span class="header-title">大巍哥和大崔哥的婚礼派对</span>
     <button class="header-btn" id="toggleBtn">查看所有照片</button>
@@ -521,6 +559,25 @@ function getUploadPageHTML() {
   </div>
 
   <script>
+    // 创建雪花
+    function createSnowflakes() {
+      const container = document.getElementById('snowflakes');
+      const snowflakeChars = ['❄', '❅', '❆', '✻', '✼', '❉'];
+      
+      for (let i = 0; i < 50; i++) {
+        const snowflake = document.createElement('div');
+        snowflake.className = 'snowflake';
+        snowflake.innerHTML = snowflakeChars[Math.floor(Math.random() * snowflakeChars.length)];
+        snowflake.style.left = Math.random() * 100 + '%';
+        snowflake.style.fontSize = (Math.random() * 10 + 8) + 'px';
+        snowflake.style.opacity = Math.random() * 0.6 + 0.4;
+        snowflake.style.animationDuration = (Math.random() * 5 + 5) + 's';
+        snowflake.style.animationDelay = (Math.random() * 5) + 's';
+        container.appendChild(snowflake);
+      }
+    }
+    createSnowflakes();
+    
     // 页面切换
     const toggleBtn = document.getElementById('toggleBtn');
     const uploadPage = document.getElementById('uploadPage');
