@@ -249,6 +249,7 @@ function getUploadPageHTML() {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>上传照片到婚礼派对</title>
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -448,7 +449,8 @@ function getUploadPageHTML() {
 
   <div class="upload-page" id="uploadPage">
     <div class="container">
-      <h1>分享美好瞬间</h1>
+      <h1 style="font-family: 'Great Vibes', cursive; font-size: 2.5rem; background: linear-gradient(90deg, #D4AF37, #F5E6BF, #D4AF37); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem;">Forever Begins Here</h1>
+      <p style="color: #D4AF37; font-size: 1rem; margin-bottom: 1.5rem; letter-spacing: 2px;">分享美好瞬间</p>
       <div class="upload-area" id="uploadArea">
         <p class="upload-text">点击选择照片</p>
       </div>
