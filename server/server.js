@@ -185,18 +185,34 @@ app.get('/api/photos', (req, res) => {
     // 返回云端照片列表
     res.json(cloudPhotos);
   } else {
-    // 返回本地照片列表
+    // 返回本地照片列表 - 使用文件名作为唯一 ID
     const files = fs.readdirSync(photosDir);
     const imageExtensions = /\.(jpg|jpeg|png|gif|webp)$/i;
     const photos = files
       .filter(f => imageExtensions.test(f))
-      .map((f, index) => ({
-        id: index + 1,
-        url: `/photos/${encodeURIComponent(f)}`
-      }));
+      .map((f) => {
+        // 从文件名提取数字作为 ID，或使用哈希
+        const match = f.match(/^(\d+)\./);
+        const id = match ? parseInt(match[1]) : Math.abs(hashCode(f));
+        return {
+          id,
+          url: `/photos/${encodeURIComponent(f)}`
+        };
+      });
     res.json(photos);
   }
 });
+
+// 简单的字符串哈希函数
+function hashCode(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return hash;
+}
 
 // 生产环境：提供上传页面
 app.get('/upload.html', (req, res) => {

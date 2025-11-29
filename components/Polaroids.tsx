@@ -106,8 +106,9 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
     if (isHighlighted && isFocusing && !hasStartedFocus.current) {
       hasStartedFocus.current = true;
       if (groupRef.current) {
-        // 立即设置到屏幕底部
-        groupRef.current.position.set(0, -20, 15);
+        // 从屏幕下方开始：世界 y=-8 → 本地 y = -8 + 6 = -2
+        // z=12 在相机前面
+        groupRef.current.position.set(0, -2, 12);
         console.log('🎯 照片开始从底部弹出', data.id);
       }
     }
@@ -152,9 +153,9 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
   
   const swayOffset = useMemo(() => Math.random() * 100, []);
 
-  // 聚焦时照片展示的位置（屏幕中央，相对于treeGroup y=-6）
-  // 世界坐标 = (0, -6+6, 10) = (0, 0, 10)
-  const focusDisplayPos = useMemo(() => new THREE.Vector3(0, 6, 10), []);
+  // 聚焦时照片展示的位置 - 相机在 (0, 2, 19)，照片在 (0, 2, 12) 世界坐标
+  // treeGroup 在 (0, -6, 0)，本地坐标 = (0, 2+6, 12) = (0, 8, 12)
+  const focusDisplayPos = useMemo(() => new THREE.Vector3(0, 8, 12), []);
   
   // 每张照片散开时的随机位置
   const scatterPos = useMemo(() => {
@@ -176,12 +177,16 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
     
     // 决定目标位置
     let targetPos: THREE.Vector3;
-    if (isHighlighted && isFocusing) {
-      // 被选中的照片：移到屏幕中央
+    
+    // 新上传的照片 && 正在聚焦
+    const shouldFocus = isHighlighted && isFocusing;
+    
+    if (shouldFocus) {
+      // 被选中的照片：移到屏幕中央（世界坐标 z=15，在相机前面）
       targetPos = focusDisplayPos;
-    } else if (expandAmount > 0.1 && !isHighlighted) {
-      // 其他照片：散开到随机位置
-      targetPos = data.targetPos.clone().lerp(scatterPos, expandAmount);
+    } else if (isFocusing && !isHighlighted) {
+      // 聚焦期间，其他照片散开
+      targetPos = scatterPos;
     } else if (isFormed) {
       targetPos = data.targetPos;
     } else {
@@ -243,8 +248,9 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
     }
   });
 
-  // 根据照片总数自适应缩放
-  const scale = calculateScale(totalPhotos);
+  // 根据照片总数自适应缩放，聚焦时大幅放大
+  const baseScale = calculateScale(totalPhotos);
+  const scale = (isHighlighted && isFocusing) ? 5 : baseScale; // 聚焦时固定大小
 
   return (
     <group ref={groupRef} scale={[scale, scale, scale]}>

@@ -109,12 +109,11 @@ export const Experience: React.FC<ExperienceProps> = ({
       }
       
       // 照片会移动到屏幕中央
-      // 照片在 treeGroup 内位置 (0, 6, 10)，treeGroup 位置是 (0, -6, 0)
-      // 所以照片世界坐标是 (0, 0, 10)
-      const photoDisplayPos = new THREE.Vector3(0, 0, 10);
+      // 照片本地 (0, 8, 12) + treeGroup (0, -6, 0) = 世界 (0, 2, 12)
+      const photoDisplayPos = new THREE.Vector3(0, 2, 12);
       
-      // 相机位置：在照片正前方，距离近以让照片占屏幕50%
-      targetCameraPos.current.set(0, 0, 14);
+      // 相机位置：在照片正前方，距离 5 单位
+      targetCameraPos.current.set(0, 2, 17);
       targetLookAt.current.copy(photoDisplayPos);
       
       // 开始聚焦
