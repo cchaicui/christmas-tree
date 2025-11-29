@@ -223,7 +223,7 @@ export const Experience: React.FC<ExperienceProps> = ({
         <Foliage 
           mode={mode} 
           count={12000} 
-          expandAmount={focusState !== 'idle' ? 0.6 : 0}
+          expandAmount={focusState !== 'idle' ? 1.0 : 0}
         />
         <Ornaments mode={mode} count={600} />
         <Polaroids 

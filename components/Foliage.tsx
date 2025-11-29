@@ -36,14 +36,22 @@ const vertexShader = `
     // Interpolate position
     vec3 newPos = mix(aChaosPos, aTargetPos, easedProgress);
     
-    // 扩张效果：粒子向外移动
+    // 扩张效果：圣诞树炸开变成满天星
     if (uExpand > 0.0) {
       vec3 center = vec3(0.0, 6.0, 0.0); // 树的中心
       vec3 direction = normalize(newPos - center);
-      float expandDist = uExpand * 3.0 * (0.5 + aRandom * 0.5); // 最大扩张3单位
+      
+      // 大幅度向外扩散，覆盖整个屏幕
+      float expandDist = uExpand * 25.0 * (0.3 + aRandom * 0.7); // 最大扩张25单位
       newPos += direction * expandDist;
-      // 添加一些随机漂浮感
-      newPos.y += sin(uTime * 2.0 + aRandom * 10.0) * uExpand * 0.5;
+      
+      // 添加高度变化，让粒子分布到整个视野
+      newPos.y += (aRandom - 0.5) * uExpand * 20.0;
+      
+      // 添加闪烁漂浮效果
+      newPos.x += sin(uTime * 1.5 + aRandom * 20.0) * uExpand * 2.0;
+      newPos.z += cos(uTime * 1.2 + aRandom * 15.0) * uExpand * 2.0;
+      newPos.y += sin(uTime * 0.8 + aRandom * 10.0) * uExpand * 1.0;
     }
     
     // Add a slight "breathing" wind effect when formed
@@ -54,26 +62,38 @@ const vertexShader = `
 
     vec4 mvPosition = modelViewMatrix * vec4(newPos, 1.0);
     
-    // Size attenuation - 扩张时粒子稍大
-    float sizeMultiplier = 1.0 + uExpand * 0.3;
-    gl_PointSize = (4.0 * aRandom + 2.0) * sizeMultiplier * (20.0 / -mvPosition.z);
+    // Size attenuation - 扩张时粒子变成星星大小
+    float sizeMultiplier = 1.0 + uExpand * 1.5;
+    // 扩张时使用固定大小，像星星一样
+    float baseSize = uExpand > 0.5 ? (3.0 + aRandom * 4.0) : (4.0 * aRandom + 2.0);
+    gl_PointSize = baseSize * sizeMultiplier * (20.0 / -mvPosition.z);
     gl_Position = projectionMatrix * mvPosition;
 
     // Color logic: Mix between Chaos Gold and Formed Emerald
     vec3 goldColor = vec3(1.0, 0.84, 0.0);
     vec3 emeraldColor = vec3(0.0, 0.4, 0.1);
     vec3 brightGreen = vec3(0.1, 0.8, 0.2);
+    vec3 starWhite = vec3(1.0, 1.0, 0.95);
+    vec3 starGold = vec3(1.0, 0.9, 0.6);
     
     // Sparkle effect - 扩张时更闪烁
-    float sparkleSpeed = 5.0 + uExpand * 5.0;
+    float sparkleSpeed = 5.0 + uExpand * 10.0;
     float sparkle = sin(uTime * sparkleSpeed + aRandom * 100.0);
     vec3 finalGreen = mix(emeraldColor, brightGreen, aRandom * 0.3);
     
-    vColor = mix(goldColor, finalGreen, easedProgress);
+    // 正常树形态的颜色
+    vec3 treeColor = mix(goldColor, finalGreen, easedProgress);
     
-    // Add sparkle to the tips
-    if (sparkle > 0.9 - uExpand * 0.3) {
-      vColor += vec3(0.5 + uExpand * 0.3);
+    // 扩张时变成星星颜色（金色和白色混合）
+    vec3 starColor = mix(starGold, starWhite, aRandom);
+    
+    // 根据扩张程度混合颜色
+    vColor = mix(treeColor, starColor, uExpand);
+    
+    // Add sparkle - 扩张时所有粒子都闪烁
+    float sparkleThreshold = 0.9 - uExpand * 0.8;
+    if (sparkle > sparkleThreshold) {
+      vColor += vec3(0.5 + uExpand * 0.5);
     }
 
     vAlpha = 1.0;
