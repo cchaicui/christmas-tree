@@ -101,53 +101,38 @@ export const Experience: React.FC<ExperienceProps> = ({
 
   // 处理新照片聚焦
   useEffect(() => {
-    if (focusPhotoId !== null && polaroidsRef.current && treeGroupRef.current) {
-      // 获取照片的本地位置
-      const photoLocalPos = polaroidsRef.current.getPhotoPosition(focusPhotoId);
-      
-      if (photoLocalPos) {
-        // 保存原始相机位置
-        originalCameraPos.current.copy(camera.position);
-        if (controlsRef.current) {
-          originalLookAt.current.copy(controlsRef.current.target);
-        }
-        
-        // 将照片本地坐标转换为世界坐标（考虑树组的旋转和位置）
-        const localPos = new THREE.Vector3(photoLocalPos.x, photoLocalPos.y, photoLocalPos.z);
-        const worldPhotoPos = localPos.clone();
-        treeGroupRef.current.localToWorld(worldPhotoPos);
-        
-        // 相机位置：非常近距离聚焦照片，让照片占屏幕50%
-        const cameraDistance = 1.2; // 非常近的距离
-        const direction = new THREE.Vector3()
-          .copy(worldPhotoPos)
-          .sub(new THREE.Vector3(0, worldPhotoPos.y, 0))
-          .normalize();
-        
-        targetCameraPos.current.set(
-          worldPhotoPos.x + direction.x * cameraDistance,
-          worldPhotoPos.y,
-          worldPhotoPos.z + direction.z * cameraDistance
-        );
-        targetLookAt.current.copy(worldPhotoPos);
-        
-        // 开始聚焦
-        setFocusState('zooming_in');
-        setHighlightPhotoId(focusPhotoId);
-        
-        // 禁用手势控制
-        if (controlsRef.current) {
-          controlsRef.current.enabled = false;
-        }
-        
-        // 30秒后回缩
-        if (focusTimerRef.current) {
-          clearTimeout(focusTimerRef.current);
-        }
-        focusTimerRef.current = setTimeout(() => {
-          setFocusState('zooming_out');
-        }, 30000);
+    if (focusPhotoId !== null) {
+      // 保存原始相机位置
+      originalCameraPos.current.copy(camera.position);
+      if (controlsRef.current) {
+        originalLookAt.current.copy(controlsRef.current.target);
       }
+      
+      // 照片会移动到屏幕中央 (0, -6, 8)，相机聚焦到这个固定位置
+      // 注意：照片在 treeGroup 内，treeGroup 位置是 (0, -6, 0)
+      // 所以照片世界坐标是 (0, -6+0, 8) = (0, -6, 8)
+      const photoDisplayPos = new THREE.Vector3(0, -6, 8);
+      
+      // 相机位置：在照片正前方，距离近以让照片占屏幕50%
+      targetCameraPos.current.set(0, -6, 12);
+      targetLookAt.current.copy(photoDisplayPos);
+      
+      // 开始聚焦
+      setFocusState('zooming_in');
+      setHighlightPhotoId(focusPhotoId);
+      
+      // 禁用手势控制
+      if (controlsRef.current) {
+        controlsRef.current.enabled = false;
+      }
+      
+      // 30秒后回缩
+      if (focusTimerRef.current) {
+        clearTimeout(focusTimerRef.current);
+      }
+      focusTimerRef.current = setTimeout(() => {
+        setFocusState('zooming_out');
+      }, 30000);
     }
     
     return () => {
@@ -231,6 +216,7 @@ export const Experience: React.FC<ExperienceProps> = ({
           mode={mode} 
           photos={photos}
           highlightPhotoId={highlightPhotoId}
+          isFocusing={focusState !== 'idle'}
         />
         <TreeStar mode={mode} />
         
