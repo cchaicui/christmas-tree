@@ -439,7 +439,24 @@ function getUploadPageHTML() {
       font-weight: 600;
       cursor: pointer;
     }
+    .new-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: #D4AF37;
+      color: #0a1f0a;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      font-weight: bold;
+      animation: pulse 1s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
   </style>
+  <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
   <div class="header">
@@ -653,6 +670,35 @@ function getUploadPageHTML() {
       status.textContent = message;
       status.className = 'status show ' + type;
     }
+
+    // WebSocket 实时更新相册
+    const socket = io();
+    socket.on('connect', () => {
+      console.log('🔗 已连接到服务器');
+    });
+    
+    socket.on('new-photo', (photo) => {
+      console.log('📸 收到新照片:', photo);
+      // 在相册中添加新照片
+      const grid = document.getElementById('galleryGrid');
+      const empty = document.getElementById('emptyGallery');
+      empty.style.display = 'none';
+      
+      const newItem = document.createElement('div');
+      newItem.className = 'gallery-item';
+      newItem.innerHTML = \`
+        <span class="new-badge">NEW</span>
+        <img src="\${photo.url}" alt="照片" onclick="openLightbox('\${photo.url}')">
+        <button class="download-btn" onclick="downloadPhoto('\${photo.url}')">保存</button>
+      \`;
+      grid.insertBefore(newItem, grid.firstChild);
+      
+      // 3秒后移除 NEW 标签
+      setTimeout(() => {
+        const badge = newItem.querySelector('.new-badge');
+        if (badge) badge.remove();
+      }, 3000);
+    });
   </script>
 </body>
 </html>`;
