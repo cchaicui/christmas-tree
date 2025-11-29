@@ -303,14 +303,11 @@ function getUploadPageHTML() {
 </head>
 <body>
   <div class="container">
-    <h1>🎄 圣诞树相册</h1>
-    <p class="subtitle">上传你的美好瞬间</p>
+    <h1>分享美好瞬间</h1>
     <div class="upload-area" id="uploadArea">
-      <div class="upload-icon">📷</div>
       <p class="upload-text">点击选择照片</p>
-      <p class="upload-hint">或拖拽图片到这里</p>
     </div>
-    <input type="file" id="fileInput" accept="image/*" capture="environment">
+    <input type="file" id="fileInput" accept="image/*">
     <div class="preview-container" id="previewContainer">
       <img id="previewImage" class="preview-image" alt="预览">
     </div>
@@ -318,7 +315,7 @@ function getUploadPageHTML() {
       <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
       <p class="progress-text" id="progressText">上传中...</p>
     </div>
-    <button class="btn btn-primary" id="uploadBtn" disabled>✨ 上传到圣诞树</button>
+    <button class="btn btn-primary" id="uploadBtn" disabled>上传到圣诞树</button>
     <button class="btn btn-secondary" id="resetBtn">重新选择</button>
     <div class="status" id="status"></div>
   </div>
