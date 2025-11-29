@@ -118,6 +118,9 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
     }
   }, [isHighlighted, isFocusing, data.id]);
 
+  // 图片宽高比
+  const [aspectRatio, setAspectRatio] = useState(1);
+  
   // 加载纹理
   useEffect(() => {
     let mounted = true;
@@ -130,9 +133,14 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
       (loadedTex) => {
         if (!mounted) return;
         try {
-        loadedTex.colorSpace = THREE.SRGBColorSpace;
-        setTexture(loadedTex);
-        setError(false);
+          loadedTex.colorSpace = THREE.SRGBColorSpace;
+          setTexture(loadedTex);
+          setError(false);
+          // 获取图片原始宽高比
+          if (loadedTex.image) {
+            const ratio = loadedTex.image.width / loadedTex.image.height;
+            setAspectRatio(ratio);
+          }
         } catch (e) {
           console.warn(`纹理处理失败: ${data.url}`, e);
           setError(true);
@@ -252,20 +260,34 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
   const baseScale = calculateScale(totalPhotos);
   const scale = (isHighlighted && isFocusing) ? 5 : baseScale; // 聚焦时固定大小
 
+  // 根据宽高比计算照片和卡片尺寸
+  const maxPhotoSize = 1.2;
+  const photoWidth = aspectRatio >= 1 ? maxPhotoSize : maxPhotoSize * aspectRatio;
+  const photoHeight = aspectRatio >= 1 ? maxPhotoSize / aspectRatio : maxPhotoSize;
+  
+  // 卡片尺寸 = 照片尺寸 + 边距
+  const cardPadding = 0.2;
+  const cardWidth = photoWidth + cardPadding;
+  const cardHeight = photoHeight + cardPadding + 0.35; // 底部多留空间给标签
+  
+  // 夹子和标签位置
+  const clipY = photoHeight / 2 + 0.15;
+  const labelY = -photoHeight / 2 - 0.15;
+
   return (
     <group ref={groupRef} scale={[scale, scale, scale]}>
       <group position={[0, 0, 0]}>
         {/* 高亮光晕 */}
         {isHighlighted && (
           <mesh ref={glowRef} position={[0, 0, -0.05]}>
-            <planeGeometry args={[1.8, 2.1]} />
+            <planeGeometry args={[cardWidth + 0.4, cardHeight + 0.4]} />
             <meshBasicMaterial color="#D4AF37" transparent opacity={0.5} />
           </mesh>
         )}
 
         {/* 浅绿色底板 */}
         <mesh position={[0, 0, 0]}>
-          <boxGeometry args={[1.4, 1.7, 0.03]} />
+          <boxGeometry args={[cardWidth, cardHeight, 0.03]} />
           <meshStandardMaterial 
             color="#3CB371"
             metalness={0.3}
@@ -275,9 +297,9 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
           />
         </mesh>
 
-        {/* 照片区域 */}
-        <mesh position={[0, 0.12, 0.025]}>
-          <planeGeometry args={[1.2, 1.2]} />
+        {/* 照片区域 - 保持原始宽高比 */}
+        <mesh position={[0, 0.1, 0.025]}>
+          <planeGeometry args={[photoWidth, photoHeight]} />
           {texture && !error ? (
             <meshBasicMaterial map={texture} />
           ) : (
@@ -290,7 +312,7 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
         </mesh>
         
         {/* 金色夹子 - 保持金色作为点缀 */}
-        <mesh position={[0, 0.8, 0.03]}>
+        <mesh position={[0, clipY, 0.03]}>
           <boxGeometry args={[0.2, 0.1, 0.08]} />
           <meshStandardMaterial 
             color="#FFD700" 
@@ -303,7 +325,7 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
 
         {/* 标签 - 深绿色文字 */}
         <Text
-          position={[0, -0.65, 0.03]}
+          position={[0, labelY, 0.03]}
           fontSize={0.12}
           color="#1a472a"
           anchorX="center"
