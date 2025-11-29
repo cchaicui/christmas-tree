@@ -18,13 +18,27 @@ export const UIOverlay: React.FC<UIOverlayProps> = ({
   const isFormed = mode === TreeMode.FORMED;
   const [showQR, setShowQR] = useState(true);
 
+  // 加载 Google Fonts 复古手写体
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+    return () => {
+      document.head.removeChild(link);
+    };
+  }, []);
+
   return (
     <div className="absolute top-0 left-0 w-full h-full pointer-events-none flex flex-col justify-between p-8 z-10">
       
       {/* Header */}
       <header className="flex flex-col items-center">
-        <h1 className="text-4xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#D4AF37] via-[#F5E6BF] to-[#D4AF37] font-serif drop-shadow-lg tracking-wider text-center">
-          大巍哥和大崔哥的婚礼派对
+        <h1 
+          className="text-5xl md:text-7xl text-transparent bg-clip-text bg-gradient-to-r from-[#D4AF37] via-[#F5E6BF] to-[#D4AF37] drop-shadow-lg tracking-wide text-center"
+          style={{ fontFamily: "'Great Vibes', cursive" }}
+        >
+          Forever Begins Here
         </h1>
       </header>
 
