@@ -101,33 +101,33 @@ export const Experience: React.FC<ExperienceProps> = ({
 
   // 处理新照片聚焦
   useEffect(() => {
-    if (focusPhotoId !== null && polaroidsRef.current) {
-      // 获取照片位置（相对于场景组，需要加上偏移）
-      const photoPos = polaroidsRef.current.getPhotoPosition(focusPhotoId);
+    if (focusPhotoId !== null && polaroidsRef.current && treeGroupRef.current) {
+      // 获取照片的本地位置
+      const photoLocalPos = polaroidsRef.current.getPhotoPosition(focusPhotoId);
       
-      if (photoPos) {
+      if (photoLocalPos) {
         // 保存原始相机位置
         originalCameraPos.current.copy(camera.position);
         if (controlsRef.current) {
           originalLookAt.current.copy(controlsRef.current.target);
         }
         
-        // 计算聚焦位置（照片位置需要考虑场景偏移 y-5）
-        const worldPhotoPos = new THREE.Vector3(
-          photoPos.x,
-          photoPos.y - 5, // 场景偏移
-          photoPos.z
-        );
+        // 将照片本地坐标转换为世界坐标（考虑树组的旋转和位置）
+        const localPos = new THREE.Vector3(photoLocalPos.x, photoLocalPos.y, photoLocalPos.z);
+        const worldPhotoPos = localPos.clone();
+        treeGroupRef.current.localToWorld(worldPhotoPos);
         
-        // 相机位置在照片前方
+        // 相机位置：从照片向外偏移，在照片正前方
+        const cameraDistance = 5;
         const direction = new THREE.Vector3()
-          .subVectors(worldPhotoPos, new THREE.Vector3(0, 0, 0))
+          .copy(worldPhotoPos)
+          .sub(new THREE.Vector3(0, worldPhotoPos.y, 0))
           .normalize();
         
         targetCameraPos.current.set(
-          worldPhotoPos.x + direction.x * 4,
-          worldPhotoPos.y + 0.5,
-          worldPhotoPos.z + direction.z * 4 + 3
+          worldPhotoPos.x + direction.x * cameraDistance,
+          worldPhotoPos.y + 1,
+          worldPhotoPos.z + direction.z * cameraDistance
         );
         targetLookAt.current.copy(worldPhotoPos);
         
@@ -159,14 +159,14 @@ export const Experience: React.FC<ExperienceProps> = ({
 
   // 相机动画和自动旋转
   useFrame((state, delta) => {
-    // 圣诞树缓缓自动旋转
+    // 圣诞树缓缓自动旋转（仅在空闲状态）
     if (treeGroupRef.current && focusState === 'idle') {
-      treeGroupRef.current.rotation.y += delta * 0.1; // 缓慢旋转
+      treeGroupRef.current.rotation.y += delta * 0.1;
     }
     
     if (!controlsRef.current) return;
 
-    const lerpSpeed = 2;
+    const lerpSpeed = 3; // 稍微加快动画速度
 
     // 聚焦动画逻辑
     if (focusState === 'zooming_in') {
@@ -175,16 +175,20 @@ export const Experience: React.FC<ExperienceProps> = ({
       controlsRef.current.update();
       
       // 检查是否到达目标
-      if (camera.position.distanceTo(targetCameraPos.current) < 0.1) {
+      if (camera.position.distanceTo(targetCameraPos.current) < 0.3) {
         setFocusState('focused');
       }
+    } else if (focusState === 'focused') {
+      // 保持聚焦状态，相机固定看向照片
+      controlsRef.current.target.lerp(targetLookAt.current, delta * lerpSpeed);
+      controlsRef.current.update();
     } else if (focusState === 'zooming_out') {
       camera.position.lerp(originalCameraPos.current, delta * lerpSpeed);
       controlsRef.current.target.lerp(originalLookAt.current, delta * lerpSpeed);
       controlsRef.current.update();
       
       // 检查是否回到原位
-      if (camera.position.distanceTo(originalCameraPos.current) < 0.1) {
+      if (camera.position.distanceTo(originalCameraPos.current) < 0.5) {
         setFocusState('idle');
         setHighlightPhotoId(null);
         controlsRef.current.enabled = true;
