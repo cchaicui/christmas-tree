@@ -168,15 +168,17 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
   // treeGroup 在 (0, -6, 0)，本地坐标 = (0, 2+6, 12) = (0, 8, 12)
   const focusDisplayPos = useMemo(() => new THREE.Vector3(0, 8, 12), []);
   
-  // 每张照片散开时的随机位置
+  // 每张照片散开时的随机位置（确保不会和聚焦照片重叠）
   const scatterPos = useMemo(() => {
     const angle = Math.random() * Math.PI * 2;
-    const radius = 15 + Math.random() * 15;
-    const height = Math.random() * 20 - 5;
+    const radius = 20 + Math.random() * 15;
+    const height = Math.random() * 25 - 10;
+    // z 值为负或很小，确保在相机后面/侧面，不会遮挡聚焦照片
+    const z = Math.sin(angle) * radius - 10;
     return new THREE.Vector3(
       Math.cos(angle) * radius,
       height,
-      Math.sin(angle) * radius
+      z
     );
   }, []);
 
