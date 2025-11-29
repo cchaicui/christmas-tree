@@ -11,6 +11,7 @@ interface PolaroidsProps {
   highlightPhotoId?: number | null;
   isFocusing?: boolean;
   expandAmount?: number; // 控制所有照片散开程度
+  onPhotoClick?: (photoId: number) => void; // 点击照片回调
 }
 
 interface PhotoData {
@@ -79,9 +80,10 @@ interface PolaroidItemProps {
   groupRef?: React.RefObject<THREE.Group>;
   isFocusing?: boolean; // 是否正在聚焦状态
   expandAmount?: number; // 控制散开程度
+  onPhotoClick?: (photoId: number) => void; // 点击照片回调
 }
 
-const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, totalPhotos, groupRef: externalRef, isFocusing = false, expandAmount = 0 }) => {
+const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, totalPhotos, groupRef: externalRef, isFocusing = false, expandAmount = 0, onPhotoClick }) => {
   const internalRef = useRef<THREE.Group>(null);
   const groupRef = externalRef || internalRef;
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
@@ -121,6 +123,15 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
   // 图片宽高比
   const [aspectRatio, setAspectRatio] = useState(1);
   
+  // 优化图片 URL（Cloudinary 变换，加载较小的缩略图）
+  const optimizedUrl = useMemo(() => {
+    if (data.url.includes('cloudinary.com')) {
+      // 在 /upload/ 后添加变换参数：宽度400，质量auto，格式auto
+      return data.url.replace('/upload/', '/upload/w_400,q_auto,f_auto/');
+    }
+    return data.url;
+  }, [data.url]);
+  
   // 加载纹理
   useEffect(() => {
     let mounted = true;
@@ -132,7 +143,7 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
     loader.setCrossOrigin('anonymous');
     
     loader.load(
-      data.url,
+      optimizedUrl,
       (loadedTex) => {
         if (!mounted) return;
         try {
@@ -145,7 +156,7 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
             setAspectRatio(ratio);
           }
         } catch (e) {
-          console.warn(`纹理处理失败: ${data.url}`, e);
+          console.warn(`纹理处理失败: ${optimizedUrl}`, e);
           setError(true);
         }
         setIsLoading(false);
@@ -153,14 +164,14 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
       undefined,
       (err) => {
         if (!mounted) return;
-        console.warn(`图片加载失败: ${data.url}`, err);
+        console.warn(`图片加载失败: ${optimizedUrl}`, err);
         setError(true);
         setIsLoading(false);
       }
     );
     
     return () => { mounted = false; };
-  }, [data.url]);
+  }, [optimizedUrl]);
   
   const swayOffset = useMemo(() => Math.random() * 100, []);
 
@@ -278,8 +289,16 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
   const clipY = photoHeight / 2 + 0.15;
   const labelY = -photoHeight / 2 - 0.15;
 
+  // 处理点击事件
+  const handleClick = (e: any) => {
+    e.stopPropagation();
+    if (onPhotoClick && !isFocusing) {
+      onPhotoClick(data.id);
+    }
+  };
+
   return (
-    <group ref={groupRef} scale={[scale, scale, scale]}>
+    <group ref={groupRef} scale={[scale, scale, scale]} onClick={handleClick}>
       <group position={[0, 0, 0]}>
         {/* 高亮光晕 */}
         {isHighlighted && (
@@ -289,8 +308,8 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
           </mesh>
         )}
 
-        {/* 浅绿色底板 */}
-        <mesh position={[0, 0, 0]}>
+        {/* 浅绿色底板 - 添加指针样式 */}
+        <mesh position={[0, 0, 0]} onPointerOver={() => document.body.style.cursor = 'pointer'} onPointerOut={() => document.body.style.cursor = 'auto'}>
           <boxGeometry args={[cardWidth, cardHeight, 0.03]} />
           <meshStandardMaterial 
             color="#3CB371"
@@ -342,7 +361,7 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
   );
 };
 
-export const Polaroids = forwardRef<PolaroidsRef, PolaroidsProps>(({ mode, photos, highlightPhotoId, isFocusing = false, expandAmount = 0 }, ref) => {
+export const Polaroids = forwardRef<PolaroidsRef, PolaroidsProps>(({ mode, photos, highlightPhotoId, isFocusing = false, expandAmount = 0, onPhotoClick }, ref) => {
   const photoRefs = useRef<Map<number, THREE.Group>>(new Map());
 
   // 计算所有照片数据
@@ -395,6 +414,7 @@ export const Polaroids = forwardRef<PolaroidsRef, PolaroidsProps>(({ mode, photo
           totalPhotos={photos.length}
           isFocusing={isFocusing && highlightPhotoId === data.id}
           expandAmount={expandAmount}
+          onPhotoClick={onPhotoClick}
         />
       ))}
     </group>

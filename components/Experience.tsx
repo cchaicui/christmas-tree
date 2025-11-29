@@ -99,6 +99,35 @@ export const Experience: React.FC<ExperienceProps> = ({
   const originalCameraPos = useRef(new THREE.Vector3(0, 4, 20));
   const originalLookAt = useRef(new THREE.Vector3(0, 4, 0));
 
+  // 处理点击照片
+  const handlePhotoClick = (photoId: number) => {
+    if (focusState !== 'idle') return; // 如果正在聚焦中，忽略点击
+    
+    // 保存原始相机位置
+    originalCameraPos.current.copy(camera.position);
+    if (controlsRef.current) {
+      originalLookAt.current.copy(controlsRef.current.target);
+    }
+    
+    // 照片会移动到屏幕中央
+    const photoDisplayPos = new THREE.Vector3(0, 2, 12);
+    targetCameraPos.current.set(0, 2, 17);
+    targetLookAt.current.copy(photoDisplayPos);
+    
+    // 禁用控制器
+    if (controlsRef.current) {
+      controlsRef.current.enabled = false;
+    }
+    
+    setHighlightPhotoId(photoId);
+    setFocusState('zooming_in');
+    
+    // 5秒后自动返回（点击的照片显示时间短一些）
+    focusTimerRef.current = setTimeout(() => {
+      setFocusState('zooming_out');
+    }, 5000);
+  };
+
   // 处理新照片聚焦
   useEffect(() => {
     if (focusPhotoId !== null) {
@@ -227,6 +256,7 @@ export const Experience: React.FC<ExperienceProps> = ({
           highlightPhotoId={highlightPhotoId}
           isFocusing={focusState !== 'idle'}
           expandAmount={focusState !== 'idle' ? 1.0 : 0}
+          onPhotoClick={handlePhotoClick}
         />
         <TreeStar 
           mode={mode} 
