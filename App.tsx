@@ -61,11 +61,16 @@ export default function App() {
   // 聚焦状态
   const [focusPhotoId, setFocusPhotoId] = useState<number | null>(null);
 
-  // 当有新照片时，触发聚焦
+  // 当有新照片时，触发聚焦（稍微延迟确保数据已更新）
   useEffect(() => {
     if (newPhoto) {
-      console.log('🎯 聚焦到新照片:', newPhoto.id);
-      setFocusPhotoId(newPhoto.id);
+      console.log('🎯 准备聚焦到新照片:', newPhoto.id);
+      // 延迟 500ms 确保照片已经渲染到树上
+      const timer = setTimeout(() => {
+        console.log('🎯 开始聚焦到新照片:', newPhoto.id);
+        setFocusPhotoId(newPhoto.id);
+      }, 500);
+      return () => clearTimeout(timer);
     }
   }, [newPhoto]);
 

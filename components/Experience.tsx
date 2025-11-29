@@ -117,8 +117,8 @@ export const Experience: React.FC<ExperienceProps> = ({
         const worldPhotoPos = localPos.clone();
         treeGroupRef.current.localToWorld(worldPhotoPos);
         
-        // 相机位置：从照片向外偏移，在照片正前方
-        const cameraDistance = 5;
+        // 相机位置：更近距离聚焦照片
+        const cameraDistance = 2.5; // 更近的距离
         const direction = new THREE.Vector3()
           .copy(worldPhotoPos)
           .sub(new THREE.Vector3(0, worldPhotoPos.y, 0))
@@ -126,7 +126,7 @@ export const Experience: React.FC<ExperienceProps> = ({
         
         targetCameraPos.current.set(
           worldPhotoPos.x + direction.x * cameraDistance,
-          worldPhotoPos.y + 1,
+          worldPhotoPos.y,
           worldPhotoPos.z + direction.z * cameraDistance
         );
         targetLookAt.current.copy(worldPhotoPos);
@@ -219,7 +219,7 @@ export const Experience: React.FC<ExperienceProps> = ({
       <directionalLight position={[-10, 10, -10]} intensity={1} color="#FFD700" />
       <pointLight position={[0, 15, 0]} intensity={1.5} color="#ffffff" />
 
-      <group position={[0, -5, 0]} ref={treeGroupRef}>
+      <group position={[0, -6, 0]} ref={treeGroupRef}>
         <Foliage mode={mode} count={12000} />
         <Ornaments mode={mode} count={600} />
         <Polaroids 
