@@ -108,13 +108,13 @@ export const Experience: React.FC<ExperienceProps> = ({
         originalLookAt.current.copy(controlsRef.current.target);
       }
       
-      // 照片会移动到屏幕中央 (0, -6, 8)，相机聚焦到这个固定位置
-      // 注意：照片在 treeGroup 内，treeGroup 位置是 (0, -6, 0)
-      // 所以照片世界坐标是 (0, -6+0, 8) = (0, -6, 8)
-      const photoDisplayPos = new THREE.Vector3(0, -6, 8);
+      // 照片会移动到屏幕中央
+      // 照片在 treeGroup 内位置 (0, 6, 10)，treeGroup 位置是 (0, -6, 0)
+      // 所以照片世界坐标是 (0, 0, 10)
+      const photoDisplayPos = new THREE.Vector3(0, 0, 10);
       
       // 相机位置：在照片正前方，距离近以让照片占屏幕50%
-      targetCameraPos.current.set(0, -6, 12);
+      targetCameraPos.current.set(0, 0, 14);
       targetLookAt.current.copy(photoDisplayPos);
       
       // 开始聚焦

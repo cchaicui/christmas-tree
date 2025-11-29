@@ -88,18 +88,21 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
   const glowRef = useRef<THREE.Mesh>(null);
   const initialized = useRef(false);
   
-  // 设置初始位置 - 新照片从屏幕底部弹出
+  // 设置初始位置
   useEffect(() => {
     if (groupRef.current && !initialized.current) {
-      if (data.isNew) {
-        // 新照片从底部开始
-        groupRef.current.position.set(0, -10, 15);
-      } else {
-        groupRef.current.position.copy(data.targetPos);
-      }
+      groupRef.current.position.copy(data.targetPos);
       initialized.current = true;
     }
-  }, [data.targetPos, data.isNew]);
+  }, [data.targetPos]);
+  
+  // 当被选中聚焦时，立即移到底部开始动画
+  useEffect(() => {
+    if (groupRef.current && isHighlighted && isFocusing) {
+      // 立即设置到屏幕底部，然后动画到中央
+      groupRef.current.position.set(0, -15, 12);
+    }
+  }, [isHighlighted, isFocusing]);
 
   // 加载纹理
   useEffect(() => {
@@ -136,8 +139,9 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
   
   const swayOffset = useMemo(() => Math.random() * 100, []);
 
-  // 聚焦时照片展示的位置（屏幕中央偏前）
-  const focusDisplayPos = useMemo(() => new THREE.Vector3(0, 0, 8), []);
+  // 聚焦时照片展示的位置（屏幕中央，相对于treeGroup y=-6）
+  // 世界坐标 = (0, -6+6, 10) = (0, 0, 10)
+  const focusDisplayPos = useMemo(() => new THREE.Vector3(0, 6, 10), []);
 
   useFrame((state, delta) => {
     if (!groupRef.current) return;
@@ -155,8 +159,8 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
       targetPos = data.chaosPos;
     }
     
-    // 新照片弹出时速度更快
-    const step = (isHighlighted && isFocusing) ? delta * 4 : delta * data.speed;
+    // 聚焦的照片弹出时速度更快
+    const step = (isHighlighted && isFocusing) ? delta * 6 : delta * data.speed;
     
     groupRef.current.position.lerp(targetPos, step);
 
