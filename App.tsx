@@ -51,7 +51,7 @@ export default function App() {
   const [mode, setMode] = useState<TreeMode>(TreeMode.FORMED);
   
   // 照片同步
-  const { photos, newPhoto, isConnected, uploadUrl, clearNewPhoto } = usePhotoSync();
+  const { photos, newPhoto, isConnected, uploadUrl, isUploading, clearNewPhoto } = usePhotoSync();
   
   // 调试：打印照片数量
   useEffect(() => {

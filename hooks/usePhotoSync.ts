@@ -14,6 +14,7 @@ interface UsePhotoSyncReturn {
   isConnected: boolean;
   serverUrl: string;
   uploadUrl: string;
+  isUploading: boolean;
   clearNewPhoto: () => void;
 }
 
@@ -37,6 +38,7 @@ export function usePhotoSync(): UsePhotoSyncReturn {
   const [newPhoto, setNewPhoto] = useState<Photo | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [uploadUrl, setUploadUrl] = useState<string>('');
+  const [isUploading, setIsUploading] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   
   const serverUrl = getServerUrl();
@@ -103,8 +105,14 @@ export function usePhotoSync(): UsePhotoSyncReturn {
       setIsConnected(false);
     });
 
+    socket.on('upload-started', () => {
+      console.log('⏳ 有人正在上传照片...');
+      setIsUploading(true);
+    });
+
     socket.on('new-photo', (photo: Photo) => {
       console.log('📸 收到新照片:', photo);
+      setIsUploading(false);
       
       // 处理照片 URL
       const processedPhoto = {
@@ -132,6 +140,7 @@ export function usePhotoSync(): UsePhotoSyncReturn {
     isConnected,
     serverUrl,
     uploadUrl,
+    isUploading,
     clearNewPhoto
   };
 }

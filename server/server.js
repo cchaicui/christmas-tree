@@ -108,6 +108,9 @@ app.post('/api/upload', upload.single('photo'), async (req, res) => {
     return res.status(400).json({ error: '没有收到文件' });
   }
   
+  // 广播上传开始事件
+  io.emit('upload-started', { timestamp: Date.now() });
+  
   try {
     let photoUrl, photoId;
     
@@ -339,11 +342,31 @@ function getUploadPageHTML() {
     .btn-primary:hover:not(:disabled) { background: linear-gradient(135deg, #F5E6BF 0%, #D4AF37 100%); }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
     .btn-secondary { background: transparent; color: #D4AF37; margin-top: 12px; display: none; }
-    .progress-container { display: none; margin: 20px 0; }
-    .progress-container.show { display: block; }
-    .progress-bar { height: 8px; background: rgba(212, 175, 55, 0.2); border-radius: 4px; overflow: hidden; }
-    .progress-fill { height: 100%; background: linear-gradient(90deg, #D4AF37, #F5E6BF); width: 0%; transition: width 0.3s; }
-    .progress-text { margin-top: 8px; font-size: 0.9rem; color: #D4AF37; }
+    /* 按钮内置进度条 */
+    .btn-primary.uploading {
+      position: relative;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .btn-primary.uploading .btn-text {
+      position: relative;
+      z-index: 2;
+    }
+    .btn-primary .progress-bg {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(135deg, #228B22 0%, #32CD32 100%);
+      transition: width 0.3s ease;
+      z-index: 1;
+    }
+    .btn-primary.success {
+      background: linear-gradient(135deg, #228B22 0%, #32CD32 100%);
+    }
+    
+    .progress-container { display: none; }
     .status { margin-top: 20px; padding: 16px; border-radius: 8px; display: none; }
     .status.show { display: block; }
     .status.success { background: rgba(34, 139, 34, 0.2); border: 1px solid #228B22; color: #90EE90; }
@@ -475,11 +498,10 @@ function getUploadPageHTML() {
       <div class="preview-container" id="previewContainer">
         <img id="previewImage" class="preview-image" alt="预览">
       </div>
-      <div class="progress-container" id="progressContainer">
-        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-        <p class="progress-text" id="progressText">上传中...</p>
-      </div>
-      <button class="btn btn-primary" id="uploadBtn" disabled>上传照片</button>
+      <button class="btn btn-primary" id="uploadBtn" disabled>
+        <div class="progress-bg" id="progressBg"></div>
+        <span class="btn-text" id="btnText">上传照片</span>
+      </button>
       <button class="btn btn-secondary" id="resetBtn">重新选择</button>
       <div class="status" id="status"></div>
     </div>
@@ -628,11 +650,16 @@ function getUploadPageHTML() {
       status.classList.remove('show');
     });
 
+    const progressBg = document.getElementById('progressBg');
+    const btnText = document.getElementById('btnText');
+    
     uploadBtn.addEventListener('click', async () => {
       if (!selectedFile) return;
       uploadBtn.disabled = true;
-      progressContainer.classList.add('show');
-      progressFill.style.width = '0%';
+      uploadBtn.classList.add('uploading');
+      progressBg.style.width = '0%';
+      btnText.textContent = '上传中 0%';
+      
       const formData = new FormData();
       formData.append('photo', selectedFile);
       try {
@@ -640,29 +667,40 @@ function getUploadPageHTML() {
         xhr.upload.addEventListener('progress', (e) => {
           if (e.lengthComputable) {
             const percent = Math.round((e.loaded / e.total) * 100);
-            progressFill.style.width = percent + '%';
-            progressText.textContent = '上传中... ' + percent + '%';
+            progressBg.style.width = percent + '%';
+            btnText.textContent = '上传中 ' + percent + '%';
           }
         });
         xhr.addEventListener('load', () => {
           if (xhr.status === 200) {
-            progressFill.style.width = '100%';
-            progressText.textContent = '上传成功!';
+            progressBg.style.width = '100%';
+            btnText.textContent = '✓ 上传成功';
+            uploadBtn.classList.remove('uploading');
+            uploadBtn.classList.add('success');
             showStatus('照片已添加到婚礼派对', 'success');
-            setTimeout(() => resetBtn.click(), 3000);
+            setTimeout(() => {
+              uploadBtn.classList.remove('success');
+              btnText.textContent = '上传照片';
+              progressBg.style.width = '0%';
+              resetBtn.click();
+            }, 2000);
           } else { throw new Error('上传失败'); }
         });
         xhr.addEventListener('error', () => {
           showStatus('上传失败，请检查网络连接', 'error');
           uploadBtn.disabled = false;
-          progressContainer.classList.remove('show');
+          uploadBtn.classList.remove('uploading');
+          btnText.textContent = '上传照片';
+          progressBg.style.width = '0%';
         });
         xhr.open('POST', '/api/upload');
         xhr.send(formData);
       } catch (error) {
         showStatus('上传失败: ' + error.message, 'error');
         uploadBtn.disabled = false;
-        progressContainer.classList.remove('show');
+        uploadBtn.classList.remove('uploading');
+        btnText.textContent = '上传照片';
+        progressBg.style.width = '0%';
       }
     });
 
