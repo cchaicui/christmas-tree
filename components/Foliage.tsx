@@ -6,11 +6,13 @@ import { TreeMode } from '../types';
 interface FoliageProps {
   mode: TreeMode;
   count: number;
+  expandAmount?: number; // 0-1, 控制粒子向外扩张程度
 }
 
 const vertexShader = `
   uniform float uTime;
   uniform float uProgress;
+  uniform float uExpand; // 扩张程度 0-1
   
   attribute vec3 aChaosPos;
   attribute vec3 aTargetPos;
@@ -34,16 +36,27 @@ const vertexShader = `
     // Interpolate position
     vec3 newPos = mix(aChaosPos, aTargetPos, easedProgress);
     
+    // 扩张效果：粒子向外移动
+    if (uExpand > 0.0) {
+      vec3 center = vec3(0.0, 6.0, 0.0); // 树的中心
+      vec3 direction = normalize(newPos - center);
+      float expandDist = uExpand * 3.0 * (0.5 + aRandom * 0.5); // 最大扩张3单位
+      newPos += direction * expandDist;
+      // 添加一些随机漂浮感
+      newPos.y += sin(uTime * 2.0 + aRandom * 10.0) * uExpand * 0.5;
+    }
+    
     // Add a slight "breathing" wind effect when formed
-    if (easedProgress > 0.9) {
+    if (easedProgress > 0.9 && uExpand < 0.1) {
       newPos.x += sin(uTime * 2.0 + newPos.y) * 0.05;
       newPos.z += cos(uTime * 1.5 + newPos.y) * 0.05;
     }
 
     vec4 mvPosition = modelViewMatrix * vec4(newPos, 1.0);
     
-    // Size attenuation
-    gl_PointSize = (4.0 * aRandom + 2.0) * (20.0 / -mvPosition.z);
+    // Size attenuation - 扩张时粒子稍大
+    float sizeMultiplier = 1.0 + uExpand * 0.3;
+    gl_PointSize = (4.0 * aRandom + 2.0) * sizeMultiplier * (20.0 / -mvPosition.z);
     gl_Position = projectionMatrix * mvPosition;
 
     // Color logic: Mix between Chaos Gold and Formed Emerald
@@ -51,15 +64,16 @@ const vertexShader = `
     vec3 emeraldColor = vec3(0.0, 0.4, 0.1);
     vec3 brightGreen = vec3(0.1, 0.8, 0.2);
     
-    // Sparkle effect
-    float sparkle = sin(uTime * 5.0 + aRandom * 100.0);
+    // Sparkle effect - 扩张时更闪烁
+    float sparkleSpeed = 5.0 + uExpand * 5.0;
+    float sparkle = sin(uTime * sparkleSpeed + aRandom * 100.0);
     vec3 finalGreen = mix(emeraldColor, brightGreen, aRandom * 0.3);
     
     vColor = mix(goldColor, finalGreen, easedProgress);
     
     // Add sparkle to the tips
-    if (sparkle > 0.9) {
-      vColor += vec3(0.5);
+    if (sparkle > 0.9 - uExpand * 0.3) {
+      vColor += vec3(0.5 + uExpand * 0.3);
     }
 
     vAlpha = 1.0;
@@ -83,11 +97,12 @@ const fragmentShader = `
   }
 `;
 
-export const Foliage: React.FC<FoliageProps> = ({ mode, count }) => {
+export const Foliage: React.FC<FoliageProps> = ({ mode, count, expandAmount = 0 }) => {
   const meshRef = useRef<THREE.Points>(null);
   
   // Target progress reference for smooth JS-side dampening logic for the uniform
   const progressRef = useRef(0);
+  const expandRef = useRef(0);
 
   const { chaosPositions, targetPositions, randoms } = useMemo(() => {
     const chaos = new Float32Array(count * 3);
@@ -133,6 +148,7 @@ export const Foliage: React.FC<FoliageProps> = ({ mode, count }) => {
   const uniforms = useMemo(() => ({
     uTime: { value: 0 },
     uProgress: { value: 0 },
+    uExpand: { value: 0 },
   }), []);
 
   useFrame((state, delta) => {
@@ -143,9 +159,12 @@ export const Foliage: React.FC<FoliageProps> = ({ mode, count }) => {
       
       // Smoothly interpolate the progress uniform
       const target = mode === TreeMode.FORMED ? 1 : 0;
-      // Using a simple lerp for the uniform value
       progressRef.current = THREE.MathUtils.lerp(progressRef.current, target, delta * 1.5);
       material.uniforms.uProgress.value = progressRef.current;
+      
+      // Smoothly interpolate expand amount
+      expandRef.current = THREE.MathUtils.lerp(expandRef.current, expandAmount, delta * 2);
+      material.uniforms.uExpand.value = expandRef.current;
     }
   });
 

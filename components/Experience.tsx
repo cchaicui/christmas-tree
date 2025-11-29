@@ -220,7 +220,11 @@ export const Experience: React.FC<ExperienceProps> = ({
       <pointLight position={[0, 15, 0]} intensity={1.5} color="#ffffff" />
 
       <group position={[0, -6, 0]} ref={treeGroupRef}>
-        <Foliage mode={mode} count={12000} />
+        <Foliage 
+          mode={mode} 
+          count={12000} 
+          expandAmount={focusState !== 'idle' ? 0.6 : 0}
+        />
         <Ornaments mode={mode} count={600} />
         <Polaroids 
           ref={polaroidsRef}
