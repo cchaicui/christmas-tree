@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState, useLayoutEffect } from 'react';
+import React, { useMemo, useRef, useLayoutEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { TreeMode } from '../types';
@@ -6,6 +6,7 @@ import { TreeMode } from '../types';
 interface OrnamentsProps {
   mode: TreeMode;
   count: number;
+  expandAmount?: number; // 0-1, 控制散开程度
 }
 
 type OrnamentType = 'ball' | 'gift' | 'light';
@@ -20,7 +21,7 @@ interface InstanceData {
   rotationOffset: THREE.Euler;
 }
 
-export const Ornaments: React.FC<OrnamentsProps> = ({ mode, count }) => {
+export const Ornaments: React.FC<OrnamentsProps> = ({ mode, count, expandAmount = 0 }) => {
   // We use 3 separate InstancedMeshes for different geometries/materials to reduce draw calls
   // but allow unique shapes.
   const ballsRef = useRef<THREE.InstancedMesh>(null);
@@ -118,9 +119,16 @@ export const Ornaments: React.FC<OrnamentsProps> = ({ mode, count }) => {
     });
   }, [ballsData, giftsData, lightsData]);
 
+  // 用于平滑过渡散开效果
+  const expandRef = useRef(0);
+
   useFrame((state, delta) => {
     const isFormed = mode === TreeMode.FORMED;
     const time = state.clock.elapsedTime;
+    
+    // 平滑过渡散开值
+    expandRef.current = THREE.MathUtils.lerp(expandRef.current, expandAmount, delta * 2);
+    const currentExpand = expandRef.current;
 
     // Helper to update a mesh ref
     const updateMesh = (ref: React.RefObject<THREE.InstancedMesh>, data: InstanceData[]) => {
@@ -129,9 +137,15 @@ export const Ornaments: React.FC<OrnamentsProps> = ({ mode, count }) => {
       let needsUpdate = false;
 
       data.forEach((d, i) => {
-        // Interpolation Factor based on individual speed and global delta
-        // We use a simple approach: if formed, target is targetPos, else chaosPos
-        const dest = isFormed ? d.targetPos : d.chaosPos;
+        // 散开时移动到混沌位置
+        let dest: THREE.Vector3;
+        if (currentExpand > 0.1) {
+          // 散开时向外扩散
+          const expandedPos = d.chaosPos.clone().multiplyScalar(1 + currentExpand * 0.5);
+          dest = d.targetPos.clone().lerp(expandedPos, currentExpand);
+        } else {
+          dest = isFormed ? d.targetPos : d.chaosPos;
+        }
         
         // We actually want to lerp the CURRENT position to the DESTINATION
         // But extracting current position from matrix is expensive every frame for all.

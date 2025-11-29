@@ -5,11 +5,13 @@ import { TreeMode } from '../types';
 
 interface TreeStarProps {
   mode: TreeMode;
+  expandAmount?: number; // 0-1, 控制散开程度
 }
 
-export const TreeStar: React.FC<TreeStarProps> = ({ mode }) => {
+export const TreeStar: React.FC<TreeStarProps> = ({ mode, expandAmount = 0 }) => {
   const starRef = useRef<THREE.Group>(null);
   const lightRef = useRef<THREE.PointLight>(null);
+  const expandRef = useRef(0);
 
   // Create a 5-pointed star shape
   const starShape = React.useMemo(() => {
@@ -51,31 +53,47 @@ export const TreeStar: React.FC<TreeStarProps> = ({ mode }) => {
     Math.random() * 20 - 10
   );
 
+  // 散开时星星飞到的位置
+  const expandedPos = new THREE.Vector3(0, 25, 0);
+
   useFrame((state, delta) => {
     if (!starRef.current) return;
 
     const isFormed = mode === TreeMode.FORMED;
     const time = state.clock.elapsedTime;
+    
+    // 平滑过渡散开值
+    expandRef.current = THREE.MathUtils.lerp(expandRef.current, expandAmount, delta * 2);
+    const currentExpand = expandRef.current;
 
-    // Position animation
-    const targetPos = isFormed ? formedPos : chaosPos;
+    // Position animation - 散开时飞到上方
+    let targetPos: THREE.Vector3;
+    if (currentExpand > 0.1) {
+      targetPos = formedPos.clone().lerp(expandedPos, currentExpand);
+    } else {
+      targetPos = isFormed ? formedPos : chaosPos;
+    }
     starRef.current.position.lerp(targetPos, delta * 1.5);
 
     // Rotation animation
-    if (isFormed) {
+    if (currentExpand > 0.1) {
+      // 散开时快速旋转
+      starRef.current.rotation.z += delta * 3;
+      starRef.current.rotation.y += delta * 2;
+    } else if (isFormed) {
       // Gentle rotation and floating when formed
       starRef.current.rotation.z = time * 0.5;
-      starRef.current.position.y = 13 + Math.sin(time * 2) * 0.1;
+      starRef.current.position.y = formedPos.y + Math.sin(time * 2) * 0.1;
     } else {
       // Spinning in chaos mode
       starRef.current.rotation.x += delta * 2;
       starRef.current.rotation.y += delta * 3;
     }
 
-    // Pulsating light
+    // Pulsating light - 散开时更亮
     if (lightRef.current) {
-      const pulse = 2 + Math.sin(time * 3) * 0.5;
-      lightRef.current.intensity = pulse;
+      const basePulse = 2 + Math.sin(time * 3) * 0.5;
+      lightRef.current.intensity = basePulse + currentExpand * 3;
     }
   });
 

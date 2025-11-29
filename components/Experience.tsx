@@ -210,7 +210,11 @@ export const Experience: React.FC<ExperienceProps> = ({
           count={12000} 
           expandAmount={focusState !== 'idle' ? 1.0 : 0}
         />
-        <Ornaments mode={mode} count={600} />
+        <Ornaments 
+          mode={mode} 
+          count={600} 
+          expandAmount={focusState !== 'idle' ? 1.0 : 0}
+        />
         <Polaroids 
           ref={polaroidsRef}
           mode={mode} 
@@ -218,7 +222,10 @@ export const Experience: React.FC<ExperienceProps> = ({
           highlightPhotoId={highlightPhotoId}
           isFocusing={focusState !== 'idle'}
         />
-        <TreeStar mode={mode} />
+        <TreeStar 
+          mode={mode} 
+          expandAmount={focusState !== 'idle' ? 1.0 : 0}
+        />
         
         <ContactShadows 
           opacity={0.7} 
