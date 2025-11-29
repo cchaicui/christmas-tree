@@ -221,6 +221,7 @@ export const Experience: React.FC<ExperienceProps> = ({
           photos={photos}
           highlightPhotoId={highlightPhotoId}
           isFocusing={focusState !== 'idle'}
+          expandAmount={focusState !== 'idle' ? 1.0 : 0}
         />
         <TreeStar 
           mode={mode} 

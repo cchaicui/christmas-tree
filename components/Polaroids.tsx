@@ -10,6 +10,7 @@ interface PolaroidsProps {
   photos: Photo[];
   highlightPhotoId?: number | null;
   isFocusing?: boolean;
+  expandAmount?: number; // 控制所有照片散开程度
 }
 
 interface PhotoData {
@@ -77,9 +78,10 @@ interface PolaroidItemProps {
   totalPhotos: number;
   groupRef?: React.RefObject<THREE.Group>;
   isFocusing?: boolean; // 是否正在聚焦状态
+  expandAmount?: number; // 控制散开程度
 }
 
-const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, totalPhotos, groupRef: externalRef, isFocusing = false }) => {
+const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, totalPhotos, groupRef: externalRef, isFocusing = false, expandAmount = 0 }) => {
   const internalRef = useRef<THREE.Group>(null);
   const groupRef = externalRef || internalRef;
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
@@ -142,6 +144,18 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
   // 聚焦时照片展示的位置（屏幕中央，相对于treeGroup y=-6）
   // 世界坐标 = (0, -6+6, 10) = (0, 0, 10)
   const focusDisplayPos = useMemo(() => new THREE.Vector3(0, 6, 10), []);
+  
+  // 每张照片散开时的随机位置
+  const scatterPos = useMemo(() => {
+    const angle = Math.random() * Math.PI * 2;
+    const radius = 15 + Math.random() * 15;
+    const height = Math.random() * 20 - 5;
+    return new THREE.Vector3(
+      Math.cos(angle) * radius,
+      height,
+      Math.sin(angle) * radius
+    );
+  }, []);
 
   useFrame((state, delta) => {
     if (!groupRef.current) return;
@@ -149,10 +163,14 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
     const isFormed = mode === TreeMode.FORMED;
     const time = state.clock.elapsedTime;
     
-    // 决定目标位置：聚焦时移到屏幕中央，否则移到树上
+    // 决定目标位置
     let targetPos: THREE.Vector3;
     if (isHighlighted && isFocusing) {
+      // 被选中的照片：移到屏幕中央
       targetPos = focusDisplayPos;
+    } else if (expandAmount > 0.1 && !isHighlighted) {
+      // 其他照片：散开到随机位置
+      targetPos = data.targetPos.clone().lerp(scatterPos, expandAmount);
     } else if (isFormed) {
       targetPos = data.targetPos;
     } else {
@@ -160,7 +178,7 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
     }
     
     // 聚焦的照片弹出时速度更快
-    const step = (isHighlighted && isFocusing) ? delta * 6 : delta * data.speed;
+    const step = (isHighlighted && isFocusing) ? delta * 6 : delta * data.speed * 2;
     
     groupRef.current.position.lerp(targetPos, step);
 
@@ -171,6 +189,10 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
         dummy.position.copy(groupRef.current.position);
         dummy.lookAt(cameraPos);
         groupRef.current.quaternion.slerp(dummy.quaternion, delta * 5);
+    } else if (expandAmount > 0.1 && !isHighlighted) {
+        // 散开时随机旋转
+        groupRef.current.rotation.x += delta * 0.5;
+        groupRef.current.rotation.y += delta * 0.3;
     } else if (isFormed) {
         const dummy = new THREE.Object3D();
         dummy.position.copy(groupRef.current.position);
@@ -277,7 +299,7 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
   );
 };
 
-export const Polaroids = forwardRef<PolaroidsRef, PolaroidsProps>(({ mode, photos, highlightPhotoId, isFocusing = false }, ref) => {
+export const Polaroids = forwardRef<PolaroidsRef, PolaroidsProps>(({ mode, photos, highlightPhotoId, isFocusing = false, expandAmount = 0 }, ref) => {
   const photoRefs = useRef<Map<number, THREE.Group>>(new Map());
 
   // 计算所有照片数据
@@ -329,6 +351,7 @@ export const Polaroids = forwardRef<PolaroidsRef, PolaroidsProps>(({ mode, photo
           isHighlighted={highlightPhotoId === data.id}
           totalPhotos={photos.length}
           isFocusing={isFocusing && highlightPhotoId === data.id}
+          expandAmount={expandAmount}
         />
       ))}
     </group>
