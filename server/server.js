@@ -460,7 +460,7 @@ function getUploadPageHTML() {
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
         <p class="progress-text" id="progressText">上传中...</p>
       </div>
-      <button class="btn btn-primary" id="uploadBtn" disabled>上传到婚礼派对</button>
+      <button class="btn btn-primary" id="uploadBtn" disabled>上传照片</button>
       <button class="btn btn-secondary" id="resetBtn">重新选择</button>
       <div class="status" id="status"></div>
     </div>
