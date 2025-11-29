@@ -44,7 +44,7 @@ export const UIOverlay: React.FC<UIOverlayProps> = ({
               onClick={() => setShowQR(!showQR)}
               className="w-full flex items-center justify-between text-[#D4AF37] hover:text-[#F5E6BF] transition-colors mb-2"
             >
-              <span className="text-sm font-serif tracking-wider flex items-center gap-2">
+              <span className="text-sm font-bold tracking-wider flex items-center gap-2" style={{ fontFamily: '"PingFang SC", "Heiti SC", "Microsoft YaHei", sans-serif' }}>
                 📱 扫码上传照片
                 {isConnected && (
                   <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="已连接"></span>
@@ -55,7 +55,7 @@ export const UIOverlay: React.FC<UIOverlayProps> = ({
 
             {/* QR Code */}
             <div className={`transition-all duration-500 ease-in-out overflow-hidden ${showQR ? 'max-h-[200px] opacity-100' : 'max-h-0 opacity-0'}`}>
-              <div className="bg-white p-3 rounded-lg">
+              <div className="bg-white p-2 rounded-lg inline-block">
                 <QRCodeSVG 
                   value={uploadUrl}
                   size={140}
@@ -65,9 +65,6 @@ export const UIOverlay: React.FC<UIOverlayProps> = ({
                   bgColor="#ffffff"
                 />
               </div>
-              <p className="text-[10px] text-[#8B7355] mt-2 text-center font-mono break-all">
-                {uploadUrl.replace('http://', '')}
-              </p>
             </div>
           </div>
         </div>
