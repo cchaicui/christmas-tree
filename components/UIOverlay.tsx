@@ -54,11 +54,11 @@ export const UIOverlay: React.FC<UIOverlayProps> = ({
             </button>
 
             {/* QR Code */}
-            <div className={`transition-all duration-500 ease-in-out overflow-hidden ${showQR ? 'max-h-[200px] opacity-100' : 'max-h-0 opacity-0'}`}>
-              <div className="bg-white p-2 rounded-lg inline-block">
+            <div className={`transition-all duration-500 ease-in-out overflow-hidden ${showQR ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'}`}>
+              <div className="bg-white p-3 rounded-lg inline-block">
                 <QRCodeSVG 
                   value={uploadUrl}
-                  size={140}
+                  size={210}
                   level="M"
                   includeMargin={false}
                   fgColor="#0a1f0a"

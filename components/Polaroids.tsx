@@ -90,6 +90,9 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
   const glowRef = useRef<THREE.Mesh>(null);
   const initialized = useRef(false);
   
+  // 跟踪是否已经开始聚焦动画
+  const hasStartedFocus = useRef(false);
+  
   // 设置初始位置
   useEffect(() => {
     if (groupRef.current && !initialized.current) {
@@ -100,11 +103,19 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
   
   // 当被选中聚焦时，立即移到底部开始动画
   useEffect(() => {
-    if (groupRef.current && isHighlighted && isFocusing) {
-      // 立即设置到屏幕底部，然后动画到中央
-      groupRef.current.position.set(0, -15, 12);
+    if (isHighlighted && isFocusing && !hasStartedFocus.current) {
+      hasStartedFocus.current = true;
+      if (groupRef.current) {
+        // 立即设置到屏幕底部
+        groupRef.current.position.set(0, -20, 15);
+        console.log('🎯 照片开始从底部弹出', data.id);
+      }
     }
-  }, [isHighlighted, isFocusing]);
+    // 聚焦结束后重置
+    if (!isFocusing) {
+      hasStartedFocus.current = false;
+    }
+  }, [isHighlighted, isFocusing, data.id]);
 
   // 加载纹理
   useEffect(() => {
