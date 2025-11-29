@@ -248,7 +248,7 @@ function getUploadPageHTML() {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>上传照片到圣诞树</title>
+  <title>上传照片到婚礼派对</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -442,7 +442,7 @@ function getUploadPageHTML() {
 </head>
 <body>
   <div class="header">
-    <span class="header-title">圣诞树相册</span>
+    <span class="header-title">大巍哥和大崔哥的婚礼派对</span>
     <button class="header-btn" id="toggleBtn">查看所有照片</button>
   </div>
 
@@ -460,7 +460,7 @@ function getUploadPageHTML() {
         <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
         <p class="progress-text" id="progressText">上传中...</p>
       </div>
-      <button class="btn btn-primary" id="uploadBtn" disabled>上传到圣诞树</button>
+      <button class="btn btn-primary" id="uploadBtn" disabled>上传到婚礼派对</button>
       <button class="btn btn-secondary" id="resetBtn">重新选择</button>
       <div class="status" id="status"></div>
     </div>
@@ -629,7 +629,7 @@ function getUploadPageHTML() {
           if (xhr.status === 200) {
             progressFill.style.width = '100%';
             progressText.textContent = '上传成功!';
-            showStatus('照片已添加到圣诞树', 'success');
+            showStatus('照片已添加到婚礼派对', 'success');
             setTimeout(() => resetBtn.click(), 3000);
           } else { throw new Error('上传失败'); }
         });
@@ -659,7 +659,7 @@ function getUploadPageHTML() {
 const localIP = getLocalIP();
 
 httpServer.listen(PORT, '0.0.0.0', () => {
-  console.log('\\n🎄 圣诞树照片服务器已启动!\\n');
+  console.log('\\n💒 婚礼派对照片服务器已启动!\\n');
   if (isProduction) {
     console.log(`🌐 生产环境模式`);
     console.log(`📡 端口: ${PORT}`);
