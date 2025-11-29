@@ -1,6 +1,5 @@
 import React, { useState, Suspense, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Loader } from '@react-three/drei';
 import { Experience } from './components/Experience';
 import { UIOverlay } from './components/UIOverlay';
 // 已移除手势控制
@@ -106,12 +105,6 @@ export default function App() {
         </Canvas>
       </ErrorBoundary>
       
-      <Loader 
-        containerStyles={{ background: '#000' }} 
-        innerStyles={{ width: '300px', height: '10px', background: '#333' }}
-        barStyles={{ background: '#D4AF37', height: '10px' }}
-        dataStyles={{ color: '#D4AF37', fontFamily: 'Cinzel' }}
-      />
       
       <UIOverlay 
         mode={mode} 
