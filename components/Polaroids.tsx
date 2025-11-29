@@ -207,12 +207,11 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
     groupRef.current.position.lerp(targetPos, step);
 
     if (isHighlighted && isFocusing) {
-        // 聚焦时面向相机
-        const cameraPos = new THREE.Vector3(0, 0, 20);
-        const dummy = new THREE.Object3D();
-        dummy.position.copy(groupRef.current.position);
-        dummy.lookAt(cameraPos);
-        groupRef.current.quaternion.slerp(dummy.quaternion, delta * 5);
+        // 聚焦时完全平面，正对相机（无透视）
+        // 目标旋转为 (0, 0, 0)，即照片平面正对 z 轴
+        const targetQuat = new THREE.Quaternion();
+        targetQuat.setFromEuler(new THREE.Euler(0, 0, 0));
+        groupRef.current.quaternion.slerp(targetQuat, delta * 5);
     } else if (expandAmount > 0.1 && !isHighlighted) {
         // 散开时随机旋转
         groupRef.current.rotation.x += delta * 0.5;
