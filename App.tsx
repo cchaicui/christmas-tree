@@ -1,21 +1,21 @@
-
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Loader } from '@react-three/drei';
 import { Experience } from './components/Experience';
 import { UIOverlay } from './components/UIOverlay';
-import { GestureController } from './components/GestureController';
+// 已移除手势控制
 import { TreeMode } from './types';
+import { usePhotoSync } from './hooks/usePhotoSync';
 
-// Simple Error Boundary to catch 3D resource loading errors (like textures)
-class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
+// Error Boundary
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
   constructor(props: any) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, error: null };
   }
 
   static getDerivedStateFromError(error: any) {
-    return { hasError: true };
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: any, errorInfo: any) {
@@ -24,17 +24,19 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
 
   render() {
     if (this.state.hasError) {
-      // You can customize this fallback UI
       return (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 text-[#D4AF37] font-serif p-8 text-center">
-          <div>
-            <h2 className="text-2xl mb-2">Something went wrong</h2>
-            <p className="opacity-70">A resource failed to load (likely a missing image). Check the console for details.</p>
+          <div className="max-w-lg">
+            <h2 className="text-2xl mb-2">出问题了</h2>
+            <p className="opacity-70 mb-4">资源加载失败。</p>
+            <pre className="text-xs text-left bg-black/50 p-4 rounded overflow-auto max-h-40 mb-4">
+              {this.state.error?.toString()}
+            </pre>
             <button 
-              onClick={() => this.setState({ hasError: false })}
+              onClick={() => this.setState({ hasError: false, error: null })}
               className="mt-4 px-4 py-2 border border-[#D4AF37] hover:bg-[#D4AF37] hover:text-black transition-colors"
             >
-              Try Again
+              重试
             </button>
           </div>
         </div>
@@ -47,15 +49,37 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
 
 export default function App() {
   const [mode, setMode] = useState<TreeMode>(TreeMode.FORMED);
-  const [handPosition, setHandPosition] = useState<{ x: number; y: number; detected: boolean }>({ x: 0.5, y: 0.5, detected: false });
+  
+  // 照片同步
+  const { photos, newPhoto, isConnected, uploadUrl, clearNewPhoto } = usePhotoSync();
+  
+  // 调试：打印照片数量
+  useEffect(() => {
+    console.log('📷 照片数量:', photos.length, photos);
+  }, [photos]);
+  
+  // 聚焦状态
+  const [focusPhotoId, setFocusPhotoId] = useState<number | null>(null);
+
+  // 当有新照片时，触发聚焦
+  useEffect(() => {
+    if (newPhoto) {
+      console.log('🎯 聚焦到新照片:', newPhoto.id);
+      setFocusPhotoId(newPhoto.id);
+    }
+  }, [newPhoto]);
+
+  // 聚焦完成后清理
+  const handleFocusComplete = () => {
+    setFocusPhotoId(null);
+    clearNewPhoto();
+  };
 
   const toggleMode = () => {
     setMode((prev) => (prev === TreeMode.FORMED ? TreeMode.CHAOS : TreeMode.FORMED));
   };
 
-  const handleHandPosition = (x: number, y: number, detected: boolean) => {
-    setHandPosition({ x, y, detected });
-  };
+
 
   return (
     <div className="w-full h-screen relative bg-gradient-to-b from-black via-[#001a0d] to-[#0a2f1e]">
@@ -67,7 +91,12 @@ export default function App() {
           shadows
         >
           <Suspense fallback={null}>
-            <Experience mode={mode} handPosition={handPosition} />
+            <Experience 
+              mode={mode} 
+              photos={photos}
+              focusPhotoId={focusPhotoId}
+              onFocusComplete={handleFocusComplete}
+            />
           </Suspense>
         </Canvas>
       </ErrorBoundary>
@@ -79,10 +108,22 @@ export default function App() {
         dataStyles={{ color: '#D4AF37', fontFamily: 'Cinzel' }}
       />
       
-      <UIOverlay mode={mode} onToggle={toggleMode} />
+      <UIOverlay 
+        mode={mode} 
+        onToggle={toggleMode}
+        uploadUrl={uploadUrl}
+        isConnected={isConnected}
+      />
       
-      {/* Gesture Control Module */}
-      <GestureController currentMode={mode} onModeChange={setMode} onHandPosition={handleHandPosition} />
+      
+      {/* 聚焦提示 */}
+      {focusPhotoId !== null && (
+        <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-20">
+          <div className="bg-black/70 backdrop-blur-md px-6 py-3 rounded-full border border-[#D4AF37] text-[#D4AF37] font-serif">
+            ✨ 新照片已添加！30秒后自动返回
+          </div>
+        </div>
+      )}
     </div>
   );
 }

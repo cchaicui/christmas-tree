@@ -38,13 +38,16 @@ export const Ornaments: React.FC<OrnamentsProps> = ({ mode, count }) => {
     const height = 11; // Slightly smaller than foliage
     const maxRadius = 4.5;
     
-    // Luxury Colors
-    const gold = new THREE.Color("#D4AF37");
-    const red = new THREE.Color("#8B0000"); // Dark Velvet Red
-    const emerald = new THREE.Color("#004422");
-    const whiteGold = new THREE.Color("#F5E6BF");
+    // 金红绿配色 - 经典圣诞色
+    const brightGold = new THREE.Color("#FFD700");   // 亮金色
+    const richGold = new THREE.Color("#FFC125");     // 橙金色
+    const crimsonRed = new THREE.Color("#DC143C");   // 深红色
+    const rubyRed = new THREE.Color("#9B111E");      // 宝石红
+    const emeraldGreen = new THREE.Color("#50C878"); // 翠绿色
+    const forestGreen = new THREE.Color("#228B22");  // 森林绿
     
-    const palette = [gold, red, gold, whiteGold];
+    // 金红绿相间的调色板 - 多加绿色
+    const palette = [brightGold, crimsonRed, emeraldGreen, richGold, rubyRed, forestGreen, brightGold, emeraldGreen, crimsonRed, forestGreen];
 
     for (let i = 0; i < count; i++) {
       const rnd = Math.random();
@@ -204,23 +207,23 @@ export const Ornaments: React.FC<OrnamentsProps> = ({ mode, count }) => {
 
   return (
     <>
-      {/* Balls: High Gloss Gold/Red */}
+      {/* Balls: 金红色金属球 - 高光泽 */}
       <instancedMesh ref={ballsRef} args={[undefined, undefined, ballsData.length]}>
         <sphereGeometry args={[1, 32, 32]} />
         <meshStandardMaterial 
-          roughness={0.1} 
-          metalness={0.9} 
+          metalness={1.0}
+          roughness={0.1}
           envMapIntensity={1.5}
         />
       </instancedMesh>
 
-      {/* Gifts: Cubes with ribbons (simplified as cubes) */}
+      {/* Gifts: 金红色礼物盒 */}
       <instancedMesh ref={giftsRef} args={[undefined, undefined, giftsData.length]}>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial 
-          roughness={0.3} 
-          metalness={0.5} 
-          color="#white" // Tinted by instance color
+          metalness={0.9}
+          roughness={0.15}
+          envMapIntensity={1.2}
         />
       </instancedMesh>
 

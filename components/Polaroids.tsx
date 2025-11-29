@@ -1,31 +1,14 @@
-
-import React, { useMemo, useRef, useState, useEffect } from 'react';
+import React, { useMemo, useRef, useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import * as THREE from 'three';
 import { TreeMode } from '../types';
-
-/**
- * ==================================================================================
- *  INSTRUCTIONS FOR LOCAL PHOTOS
- * ==================================================================================
- * 1. Create a folder named "photos" inside your "public" directory.
- *    (e.g., public/photos/)
- * 
- * 2. Place your JPG images in there.
- * 
- * 3. Rename them sequentially:
- *    1.jpg, 2.jpg, 3.jpg ... up to 13.jpg
- * 
- *    If a file is missing (e.g., you only have 5 photos), the frame will 
- *    display a placeholder instead of crashing the app.
- * ==================================================================================
- */
-
-const PHOTO_COUNT = 22; // How many polaroid frames to generate
+import { Photo } from '../hooks/usePhotoSync';
 
 interface PolaroidsProps {
   mode: TreeMode;
+  photos: Photo[];
+  highlightPhotoId?: number | null;
 }
 
 interface PhotoData {
@@ -34,32 +17,116 @@ interface PhotoData {
   chaosPos: THREE.Vector3;
   targetPos: THREE.Vector3;
   speed: number;
+  isNew?: boolean;
 }
 
-const PolaroidItem: React.FC<{ data: PhotoData; mode: TreeMode; index: number }> = ({ data, mode, index }) => {
-  const groupRef = useRef<THREE.Group>(null);
+export interface PolaroidsRef {
+  getPhotoPosition: (photoId: number) => THREE.Vector3 | null;
+}
+
+// 计算照片在树上的目标位置 - 紧贴球的外侧
+function calculateTargetPosition(index: number, total: number): THREE.Vector3 {
+  const height = 9;
+  const maxRadius = 4.8; // 稍微靠近树
+  
+  // 使用螺旋分布，确保所有照片都能均匀分布
+  const yNorm = 0.12 + (index / Math.max(total, 1)) * 0.78;
+  const y = yNorm * height;
+  // 半径随高度递减（树是锥形的）
+  const r = maxRadius * (1 - yNorm * 0.6) + 0.8;
+  const theta = index * 2.39996; // Golden angle
+  
+  return new THREE.Vector3(
+    r * Math.cos(theta),
+    y,
+    r * Math.sin(theta)
+  );
+}
+
+// 根据照片数量计算卡片缩放比例
+function calculateScale(totalPhotos: number): number {
+  if (totalPhotos <= 5) return 1.5;
+  if (totalPhotos <= 10) return 1.3;
+  if (totalPhotos <= 15) return 1.1;
+  if (totalPhotos <= 20) return 0.95;
+  if (totalPhotos <= 30) return 0.8;
+  if (totalPhotos <= 50) return 0.65;
+  return 0.5; // 50+ 照片
+}
+
+// 计算混沌模式下的位置
+function calculateChaosPosition(index: number, total: number): THREE.Vector3 {
+  const relativeY = 5;
+  const relativeZ = 20;
+  const angle = (index / Math.max(total, 1)) * Math.PI * 2;
+  const distance = 3 + Math.random() * 4;
+  const heightSpread = (Math.random() - 0.5) * 8;
+  
+  return new THREE.Vector3(
+    distance * Math.cos(angle) * 1.2,
+    relativeY + heightSpread,
+    relativeZ - 4 + distance * Math.sin(angle) * 0.5
+  );
+}
+
+interface PolaroidItemProps {
+  data: PhotoData;
+  mode: TreeMode;
+  isHighlighted: boolean;
+  totalPhotos: number;
+  groupRef?: React.RefObject<THREE.Group>;
+}
+
+const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, totalPhotos, groupRef: externalRef }) => {
+  const internalRef = useRef<THREE.Group>(null);
+  const groupRef = externalRef || internalRef;
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
   const [error, setError] = useState(false);
-
-  // Safe texture loading that won't crash the app if a file is missing
+  const [isLoading, setIsLoading] = useState(true);
+  const glowRef = useRef<THREE.Mesh>(null);
+  const initialized = useRef(false);
+  
+  // 设置初始位置
   useEffect(() => {
+    if (groupRef.current && !initialized.current) {
+      groupRef.current.position.copy(data.targetPos);
+      initialized.current = true;
+    }
+  }, [data.targetPos]);
+
+  // 加载纹理
+  useEffect(() => {
+    let mounted = true;
+    setIsLoading(true);
+    setError(false);
+    
     const loader = new THREE.TextureLoader();
     loader.load(
       data.url,
       (loadedTex) => {
+        if (!mounted) return;
+        try {
         loadedTex.colorSpace = THREE.SRGBColorSpace;
         setTexture(loadedTex);
         setError(false);
+        } catch (e) {
+          console.warn(`纹理处理失败: ${data.url}`, e);
+          setError(true);
+        }
+        setIsLoading(false);
       },
-      undefined, // onProgress
+      undefined,
       (err) => {
-        console.warn(`Failed to load image: ${data.url}`, err);
+        if (!mounted) return;
+        console.warn(`图片加载失败: ${data.url}`, err);
         setError(true);
+        setIsLoading(false);
       }
     );
+    
+    return () => { mounted = false; };
   }, [data.url]);
   
-  // Random sway offset
   const swayOffset = useMemo(() => Math.random() * 100, []);
 
   useFrame((state, delta) => {
@@ -68,54 +135,33 @@ const PolaroidItem: React.FC<{ data: PhotoData; mode: TreeMode; index: number }>
     const isFormed = mode === TreeMode.FORMED;
     const time = state.clock.elapsedTime;
     
-    // 1. Position Interpolation
     const targetPos = isFormed ? data.targetPos : data.chaosPos;
     const step = delta * data.speed;
     
-    // Smooth lerp to target position
     groupRef.current.position.lerp(targetPos, step);
 
-    // 2. Rotation & Sway Logic
     if (isFormed) {
-        // Look at center but face outward
         const dummy = new THREE.Object3D();
         dummy.position.copy(groupRef.current.position);
         dummy.lookAt(0, groupRef.current.position.y, 0); 
-        dummy.rotateY(Math.PI); // Flip to face out
+      dummy.rotateY(Math.PI);
         
-        // Base rotation alignment
         groupRef.current.quaternion.slerp(dummy.quaternion, step);
         
-        // Physical Swaying (Wind)
-        // Z-axis rotation for side-to-side swing
         const swayAngle = Math.sin(time * 2.0 + swayOffset) * 0.08;
-        // X-axis rotation for slight front-back tilt
         const tiltAngle = Math.cos(time * 1.5 + swayOffset) * 0.05;
         
-        groupRef.current.rotateZ(swayAngle * delta * 5); // Apply over time or directly? 
-        // For stable sway, we add to the base rotation calculated above.
-        // But since we slerp quaternion, let's just add manual rotation after slerp?
-        // Easier: Set rotation directly based on dummy + sway.
-        
-        // Calculate the "perfect" rotation
         const currentRot = new THREE.Euler().setFromQuaternion(groupRef.current.quaternion);
         groupRef.current.rotation.z = currentRot.z + swayAngle * 0.05; 
         groupRef.current.rotation.x = currentRot.x + tiltAngle * 0.05;
-        
     } else {
-        // Chaos mode - face toward camera with gentle floating
-        // Camera position relative to scene group: [0, 9, 20]
         const cameraPos = new THREE.Vector3(0, 9, 20);
         const dummy = new THREE.Object3D();
         dummy.position.copy(groupRef.current.position);
-        
-        // Make photos face the camera
         dummy.lookAt(cameraPos);
         
-        // Smoothly rotate to face camera
         groupRef.current.quaternion.slerp(dummy.quaternion, delta * 3);
         
-        // Add gentle floating wobble
         const wobbleX = Math.sin(time * 1.5 + swayOffset) * 0.03;
         const wobbleZ = Math.cos(time * 1.2 + swayOffset) * 0.03;
         
@@ -123,115 +169,138 @@ const PolaroidItem: React.FC<{ data: PhotoData; mode: TreeMode; index: number }>
         groupRef.current.rotation.x = currentRot.x + wobbleX;
         groupRef.current.rotation.z = currentRot.z + wobbleZ;
     }
+
+    // 高亮动画
+    if (glowRef.current) {
+      const glowIntensity = isHighlighted 
+        ? 0.5 + Math.sin(time * 4) * 0.3 
+        : 0;
+      (glowRef.current.material as THREE.MeshBasicMaterial).opacity = glowIntensity;
+    }
   });
 
-  return (
-    <group ref={groupRef}>
-      
-      {/* The Hanging String (Visual only) - fades out at top */}
-      <mesh position={[0, 1.2, -0.1]}>
-        <cylinderGeometry args={[0.005, 0.005, 1.5]} />
-        <meshStandardMaterial color="#D4AF37" metalness={1} roughness={0.2} transparent opacity={0.6} />
-      </mesh>
+  // 根据照片总数自适应缩放
+  const scale = calculateScale(totalPhotos);
 
-      {/* Frame Group (Offset slightly so string connects to top center) */}
+  return (
+    <group ref={groupRef} scale={[scale, scale, scale]}>
       <group position={[0, 0, 0]}>
-        
-        {/* White Paper Backing */}
+        {/* 高亮光晕 */}
+        {isHighlighted && (
+          <mesh ref={glowRef} position={[0, 0, -0.05]}>
+            <planeGeometry args={[1.8, 2.1]} />
+            <meshBasicMaterial color="#D4AF37" transparent opacity={0.5} />
+          </mesh>
+        )}
+
+        {/* 浅绿色底板 */}
         <mesh position={[0, 0, 0]}>
-          <boxGeometry args={[1.2, 1.5, 0.02]} />
-          <meshStandardMaterial color="#fdfdfd" roughness={0.8} />
+          <boxGeometry args={[1.4, 1.7, 0.03]} />
+          <meshStandardMaterial 
+            color="#3CB371"
+            metalness={0.3}
+            roughness={0.4}
+            emissive="#2E8B57"
+            emissiveIntensity={0.15}
+          />
         </mesh>
 
-        {/* The Photo Area */}
-        <mesh position={[0, 0.15, 0.025]}>
-          <planeGeometry args={[1.0, 1.0]} />
+        {/* 照片区域 */}
+        <mesh position={[0, 0.12, 0.025]}>
+          <planeGeometry args={[1.2, 1.2]} />
           {texture && !error ? (
             <meshBasicMaterial map={texture} />
           ) : (
-            // Fallback Material (Red for error, Grey for loading)
-            <meshStandardMaterial color={error ? "#550000" : "#cccccc"} />
+            <meshStandardMaterial 
+              color={error ? "#ff4444" : isLoading ? "#666666" : "#aaaaaa"} 
+              emissive={error ? "#ff0000" : "#333333"}
+              emissiveIntensity={0.2}
+            />
           )}
         </mesh>
         
-        {/* "Tape" or Gold Clip */}
-        <mesh position={[0, 0.7, 0.025]} rotation={[0,0,0]}>
-           <boxGeometry args={[0.1, 0.05, 0.05]} />
-           <meshStandardMaterial color="#D4AF37" metalness={1} roughness={0.2} />
+        {/* 金色夹子 - 保持金色作为点缀 */}
+        <mesh position={[0, 0.8, 0.03]}>
+          <boxGeometry args={[0.2, 0.1, 0.08]} />
+          <meshStandardMaterial 
+            color="#FFD700" 
+            metalness={1} 
+            roughness={0.15}
+            emissive="#FFD700"
+            emissiveIntensity={0.3}
+          />
         </mesh>
 
-        {/* Text Label */}
+        {/* 标签 - 深绿色文字 */}
         <Text
-          position={[0, -0.55, 0.03]}
+          position={[0, -0.65, 0.03]}
           fontSize={0.12}
-          color="#333"
+          color="#1a472a"
           anchorX="center"
           anchorY="middle"
         >
-          {error ? "No Img" : "Fox Family"}
+          {error ? "⚠️" : `#${data.id}`}
         </Text>
       </group>
     </group>
   );
 };
 
-export const Polaroids: React.FC<PolaroidsProps> = ({ mode }) => {
-  const photoData = useMemo(() => {
-    const data: PhotoData[] = [];
-    const height = 9; // Range of height on tree
-    const maxRadius = 5.0; // Slightly outside the foliage radius (which is approx 5 at bottom)
+export const Polaroids = forwardRef<PolaroidsRef, PolaroidsProps>(({ mode, photos, highlightPhotoId }, ref) => {
+  const photoRefs = useRef<Map<number, THREE.Group>>(new Map());
 
-    for (let i = 0; i < PHOTO_COUNT; i++) {
-      // 1. Target Position
-      // Distributed nicely on the cone surface
-      const yNorm = 0.2 + (i / PHOTO_COUNT) * 0.6; // Keep between 20% and 80% height
-      const y = yNorm * height;
-      
-      // Radius decreases as we go up
-      const r = maxRadius * (1 - yNorm) + 0.8; // +0.8 to ensure it floats OUTSIDE leaves
-      
-      // Golden Angle Spiral for even distribution
-      const theta = i * 2.39996; // Golden angle in radians
-      
-      const targetPos = new THREE.Vector3(
-        r * Math.cos(theta),
-        y,
-        r * Math.sin(theta)
-      );
+  // 计算所有照片数据
+  const photoDataList = useMemo(() => {
+    console.log('🖼️ Polaroids 收到照片:', photos.length);
+    return photos.map((photo, index) => {
+      // 使用相对路径，让 Vite 代理处理
+      const url = photo.url.startsWith('http') ? photo.url : `http://localhost:3011${photo.url}`;
+      console.log(`  照片 ${index + 1}: ${url}`);
+      return {
+        id: photo.id,
+        url,
+        chaosPos: calculateChaosPosition(index, photos.length),
+        targetPos: calculateTargetPosition(index, photos.length),
+        speed: 0.8 + Math.random() * 1.5,
+        isNew: photo.isNew
+      };
+    });
+  }, [photos]);
 
-      // 2. Chaos Position - Spread out and closer to camera
-      // Camera is at [0, 4, 20], Scene group offset is [0, -5, 0]
-      // So relative to scene, camera is at y=9
-      const relativeY = 5; // Lower position for better visibility
-      const relativeZ = 20; // Camera Z
-      
-      // Create positions spread widely around camera, very close
-      const angle = (i / PHOTO_COUNT) * Math.PI * 2; // Distribute evenly
-      const distance = 3 + Math.random() * 4; // Distance 3-7 units (very close)
-      const heightSpread = (Math.random() - 0.5) * 8; // Height variation -4 to +4 (more spread)
-      
-      const chaosPos = new THREE.Vector3(
-        distance * Math.cos(angle) * 1.2, // X spread wider
-        relativeY + heightSpread, // More vertical spread
-        relativeZ - 4 + distance * Math.sin(angle) * 0.5 // Very close to camera (Z ~16-19)
-      );
-
-      data.push({
-        id: i,
-        url: `/photos/${i + 1}.jpg`, // Looks for 1.jpg, 2.jpg...
-        chaosPos,
-        targetPos,
-        speed: 0.8 + Math.random() * 1.5 // Variable speed
-      });
+  // 暴露获取照片位置的方法
+  useImperativeHandle(ref, () => ({
+    getPhotoPosition: (photoId: number) => {
+      const photoData = photoDataList.find(p => p.id === photoId);
+      if (photoData) {
+        // 返回照片在树形态下的目标位置
+        return photoData.targetPos.clone();
+      }
+      return null;
     }
-    return data;
-  }, []);
+  }), [photoDataList]);
+
+  // 为每个照片创建 ref
+  const getRefForPhoto = (id: number) => {
+    if (!photoRefs.current.has(id)) {
+      const newRef = { current: null as THREE.Group | null };
+      return newRef;
+    }
+    return { current: photoRefs.current.get(id)! };
+  };
 
   return (
     <group>
-      {photoData.map((data, i) => (
-        <PolaroidItem key={i} index={i} data={data} mode={mode} />
+      {photoDataList.map((data) => (
+        <PolaroidItem
+          key={data.id}
+          data={data}
+          mode={mode}
+          isHighlighted={highlightPhotoId === data.id}
+          totalPhotos={photos.length}
+        />
       ))}
     </group>
   );
-};
+});
+
+Polaroids.displayName = 'Polaroids';
