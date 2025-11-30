@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { OrbitControls, ContactShadows } from '@react-three/drei';
+import { OrbitControls, ContactShadows, Environment } from '@react-three/drei';
 import { PMREMGenerator, Color, Scene as ThreeScene, Mesh, MeshBasicMaterial, SphereGeometry, BackSide } from 'three';
 import { EffectComposer, Bloom, Vignette, Noise } from '@react-three/postprocessing';
 import { BlendFunction } from 'postprocessing';
@@ -232,13 +232,13 @@ export const Experience: React.FC<ExperienceProps> = ({
         makeDefault
       />
 
-      {/* 程序化环境光 - 不需要下载 */}
-      <ProgrammaticEnvironment />
+      {/* 使用本地 HDR 环境贴图 - 金属材质反射效果更好 */}
+      <Environment files="/envmaps/studio.hdr" background={false} />
       
-      <ambientLight intensity={0.4} color="#ffffff" />
-      <directionalLight position={[10, 20, 10]} intensity={2} color="#ffffff" />
-      <directionalLight position={[-10, 10, -10]} intensity={1} color="#FFD700" />
-      <pointLight position={[0, 15, 0]} intensity={1.5} color="#ffffff" />
+      <ambientLight intensity={0.08} color="#ffffff" />
+      <directionalLight position={[10, 20, 10]} intensity={0.5} color="#fff8e8" />
+      <directionalLight position={[-10, 10, -10]} intensity={0.25} color="#D4AF37" />
+      <pointLight position={[0, 15, 0]} intensity={0.3} color="#ffffff" />
 
       <group position={[0, -6, 0]} ref={treeGroupRef}>
         <Foliage 
@@ -248,7 +248,7 @@ export const Experience: React.FC<ExperienceProps> = ({
         />
         <Ornaments 
           mode={mode} 
-          count={600} 
+          count={1200} 
           expandAmount={focusState !== 'idle' ? 1.0 : 0}
         />
         <Polaroids 

@@ -39,16 +39,17 @@ export const Ornaments: React.FC<OrnamentsProps> = ({ mode, count, expandAmount 
     const height = 11; // Slightly smaller than foliage
     const maxRadius = 4.5;
     
-    // 金红绿配色 - 经典圣诞色
-    const brightGold = new THREE.Color("#FFD700");   // 亮金色
-    const richGold = new THREE.Color("#FFC125");     // 橙金色
-    const crimsonRed = new THREE.Color("#DC143C");   // 深红色
-    const rubyRed = new THREE.Color("#9B111E");      // 宝石红
-    const emeraldGreen = new THREE.Color("#50C878"); // 翠绿色
-    const forestGreen = new THREE.Color("#228B22");  // 森林绿
+    // 金红绿配色 - 经典圣诞色（深色调）
+    const antiqueGold = new THREE.Color("#CFB53B");  // 古铜金
+    const oldGold = new THREE.Color("#CFB53B");      // 旧金色
+    const darkGold = new THREE.Color("#B8860B");     // 暗金色
+    const crimsonRed = new THREE.Color("#B22222");   // 砖红色
+    const darkRed = new THREE.Color("#8B0000");      // 暗红色
+    const hunterGreen = new THREE.Color("#355E3B");  // 猎人绿
+    const darkGreen = new THREE.Color("#2E5A2E");    // 深绿色
     
-    // 金红绿相间的调色板 - 多加绿色
-    const palette = [brightGold, crimsonRed, emeraldGreen, richGold, rubyRed, forestGreen, brightGold, emeraldGreen, crimsonRed, forestGreen];
+    // 金红绿相间的调色板 - 深色调
+    const palette = [antiqueGold, crimsonRed, hunterGreen, oldGold, darkRed, darkGreen, darkGold, hunterGreen, antiqueGold, darkGreen];
 
     for (let i = 0; i < count; i++) {
       const rnd = Math.random();
@@ -225,9 +226,9 @@ export const Ornaments: React.FC<OrnamentsProps> = ({ mode, count, expandAmount 
       <instancedMesh ref={ballsRef} args={[undefined, undefined, ballsData.length]}>
         <sphereGeometry args={[1, 32, 32]} />
         <meshStandardMaterial 
-          metalness={1.0}
+          metalness={0.9}
           roughness={0.1}
-          envMapIntensity={1.5}
+          envMapIntensity={2.0}
         />
       </instancedMesh>
 

@@ -28,17 +28,33 @@ export interface PolaroidsRef {
   getPhotoPosition: (photoId: number) => THREE.Vector3 | null;
 }
 
-// 计算照片在树上的目标位置 - 紧贴球的外侧
+// 计算照片在树上的目标位置 - 环形灯条效果
 function calculateTargetPosition(index: number, total: number): THREE.Vector3 {
-  const height = 9;
-  const maxRadius = 4.8; // 稍微靠近树
+  const treeHeight = 10;
+  const baseRadius = 5.2;  // 底部半径
+  const topRadius = 1.2;   // 顶部半径
   
-  // 使用螺旋分布，确保所有照片都能均匀分布
-  const yNorm = 0.12 + (index / Math.max(total, 1)) * 0.78;
-  const y = yNorm * height;
+  // 计算需要多少层环
+  const photosPerRing = Math.max(6, Math.ceil(total / 5)); // 每层至少6张照片
+  const numRings = Math.ceil(total / photosPerRing);
+  
+  // 确定当前照片在哪一层
+  const ringIndex = Math.floor(index / photosPerRing);
+  const posInRing = index % photosPerRing;
+  
+  // 当前层的实际照片数量
+  const photosInThisRing = Math.min(photosPerRing, total - ringIndex * photosPerRing);
+  
+  // 计算高度 (从底部到顶部分布)
+  const yNorm = 0.15 + (ringIndex / Math.max(numRings - 1, 1)) * 0.7;
+  const y = yNorm * treeHeight;
+  
   // 半径随高度递减（树是锥形的）
-  const r = maxRadius * (1 - yNorm * 0.6) + 0.8;
-  const theta = index * 2.39996; // Golden angle
+  const r = baseRadius * (1 - yNorm * 0.75) + topRadius * yNorm * 0.5 + 0.5;
+  
+  // 在当前环上均匀分布，每层有一点偏移让螺旋感更强
+  const ringOffset = ringIndex * 0.3; // 每层旋转偏移
+  const theta = (posInRing / photosInThisRing) * Math.PI * 2 + ringOffset;
   
   return new THREE.Vector3(
     r * Math.cos(theta),
@@ -309,15 +325,15 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
           </mesh>
         )}
 
-        {/* 浅绿色底板 - 添加指针样式 */}
+        {/* 浅金色底板 - 添加指针样式 */}
         <mesh position={[0, 0, 0]} onPointerOver={() => document.body.style.cursor = 'pointer'} onPointerOut={() => document.body.style.cursor = 'auto'}>
           <boxGeometry args={[cardWidth, cardHeight, 0.03]} />
           <meshStandardMaterial 
-            color="#3CB371"
-            metalness={0.3}
-            roughness={0.4}
-            emissive="#2E8B57"
-            emissiveIntensity={0.15}
+            color="#F5E6BF"
+            metalness={0.4}
+            roughness={0.3}
+            emissive="#D4AF37"
+            emissiveIntensity={0.1}
           />
         </mesh>
 
