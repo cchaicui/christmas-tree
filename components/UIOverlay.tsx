@@ -59,7 +59,7 @@ export const UIOverlay: React.FC<UIOverlayProps> = ({
               className="w-full flex items-center justify-between text-[#D4AF37] hover:text-[#F5E6BF] transition-colors mb-2"
             >
               <span className="text-sm font-bold tracking-wider flex items-center gap-2" style={{ fontFamily: '"PingFang SC", "Heiti SC", "Microsoft YaHei", sans-serif' }}>
-                📱 扫码上传照片
+                📱 扫码上树照片
                 {isConnected && (
                   <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="已连接"></span>
                 )}

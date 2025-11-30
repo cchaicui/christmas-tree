@@ -251,7 +251,7 @@ function getUploadPageHTML() {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>上传照片到婚礼派对</title>
+  <title>上树照片到婚礼派对</title>
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -538,7 +538,7 @@ function getUploadPageHTML() {
       </div>
       <button class="btn btn-primary" id="uploadBtn" disabled>
         <div class="progress-bg" id="progressBg"></div>
-        <span class="btn-text" id="btnText">上传照片</span>
+        <span class="btn-text" id="btnText">上树照片</span>
       </button>
       <button class="btn btn-secondary" id="resetBtn">重新选择</button>
       <div class="status" id="status"></div>
@@ -589,7 +589,7 @@ function getUploadPageHTML() {
       if (isGalleryView) {
         uploadPage.classList.add('hidden');
         galleryPage.classList.add('show');
-        toggleBtn.textContent = '上传照片';
+        toggleBtn.textContent = '上树照片';
         toggleBtn.classList.add('active');
         loadGallery();
       } else {
@@ -737,7 +737,7 @@ function getUploadPageHTML() {
             showStatus('照片已添加到婚礼派对', 'success');
             setTimeout(() => {
               uploadBtn.classList.remove('success');
-              btnText.textContent = '上传照片';
+              btnText.textContent = '上树照片';
               progressBg.style.width = '0%';
               resetBtn.click();
             }, 2000);
@@ -747,7 +747,7 @@ function getUploadPageHTML() {
           showStatus('上传失败，请检查网络连接', 'error');
           uploadBtn.disabled = false;
           uploadBtn.classList.remove('uploading');
-          btnText.textContent = '上传照片';
+          btnText.textContent = '上树照片';
           progressBg.style.width = '0%';
         });
         xhr.open('POST', '/api/upload');
@@ -756,7 +756,7 @@ function getUploadPageHTML() {
         showStatus('上传失败: ' + error.message, 'error');
         uploadBtn.disabled = false;
         uploadBtn.classList.remove('uploading');
-        btnText.textContent = '上传照片';
+        btnText.textContent = '上树照片';
         progressBg.style.width = '0%';
       }
     });
