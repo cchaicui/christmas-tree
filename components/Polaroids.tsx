@@ -21,6 +21,7 @@ interface PhotoData {
   targetPos: THREE.Vector3;
   speed: number;
   isNew?: boolean;
+  message?: string;
 }
 
 export interface PolaroidsRef {
@@ -346,15 +347,17 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
           />
         </mesh>
 
-        {/* 标签 - 深绿色文字 */}
+        {/* 标签 - 优先显示留言，否则显示编号 */}
         <Text
           position={[0, labelY, 0.03]}
-          fontSize={0.12}
-          color="#1a472a"
+          fontSize={data.message ? 0.09 : 0.12}
+          color={data.message ? "#D4AF37" : "#1a472a"}
           anchorX="center"
           anchorY="middle"
+          maxWidth={cardWidth - 0.1}
+          font={data.message ? "https://fonts.gstatic.com/s/greatvibes/v18/RWmMoKWR9v4ksMfaWd_JN9XLiaQoDmlrMlY.woff2" : undefined}
         >
-          {error ? "⚠️" : `#${data.id}`}
+          {error ? "⚠️" : (data.message || `#${data.id}`)}
         </Text>
       </group>
     </group>
@@ -377,7 +380,8 @@ export const Polaroids = forwardRef<PolaroidsRef, PolaroidsProps>(({ mode, photo
         chaosPos: calculateChaosPosition(index, photos.length),
         targetPos: calculateTargetPosition(index, photos.length),
         speed: 0.8 + Math.random() * 1.5,
-        isNew: photo.isNew
+        isNew: photo.isNew,
+        message: photo.message
       };
     });
   }, [photos]);

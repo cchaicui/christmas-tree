@@ -6,6 +6,7 @@ export interface Photo {
   url: string;
   timestamp?: number;
   isNew?: boolean;
+  message?: string;
 }
 
 interface UsePhotoSyncReturn {

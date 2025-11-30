@@ -108,6 +108,9 @@ app.post('/api/upload', upload.single('photo'), async (req, res) => {
     return res.status(400).json({ error: '没有收到文件' });
   }
   
+  // 获取留言（可选）
+  const message = req.body.message || '';
+  
   // 广播上传开始事件
   io.emit('upload-started', { timestamp: Date.now() });
   
@@ -133,10 +136,10 @@ app.post('/api/upload', upload.single('photo'), async (req, res) => {
       photoId = ++photoCounter;
       photoUrl = result.secure_url;
       
-      // 保存到内存列表
-      cloudPhotos.push({ id: photoId, url: photoUrl, timestamp: Date.now() });
+      // 保存到内存列表（包含留言）
+      cloudPhotos.push({ id: photoId, url: photoUrl, message, timestamp: Date.now() });
       
-      console.log(`📸 新照片上传到云端: ${photoId}`);
+      console.log(`📸 新照片上传到云端: ${photoId}${message ? ` 留言: ${message}` : ''}`);
     } else {
       // 本地存储
       photoUrl = `/photos/${req.file.filename}`;
@@ -144,17 +147,19 @@ app.post('/api/upload', upload.single('photo'), async (req, res) => {
       console.log(`📸 新照片上传到本地: ${req.file.filename}`);
     }
     
-    // 通过 WebSocket 广播新照片
+    // 通过 WebSocket 广播新照片（包含留言）
     io.emit('new-photo', {
       id: photoId,
       url: photoUrl,
+      message,
       timestamp: Date.now()
     });
     
     res.json({ 
       success: true, 
       url: photoUrl,
-      id: photoId
+      id: photoId,
+      message
     });
   } catch (error) {
     console.error('上传失败:', error);
@@ -357,6 +362,43 @@ function getUploadPageHTML() {
     .preview-container { display: none; margin-bottom: 20px; }
     .preview-container.show { display: block; }
     .preview-image { max-width: 100%; max-height: 300px; border-radius: 12px; border: 3px solid #D4AF37; }
+    
+    /* 留言输入框 */
+    .message-input-container {
+      display: none;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .message-input-container.show { display: block; }
+    .message-input {
+      width: 100%;
+      padding: 12px 16px;
+      padding-right: 60px;
+      font-size: 1rem;
+      font-family: 'Great Vibes', cursive;
+      color: #D4AF37;
+      background: rgba(0, 0, 0, 0.3);
+      border: 2px solid #D4AF37;
+      border-radius: 12px;
+      resize: none;
+      outline: none;
+    }
+    .message-input::placeholder {
+      color: rgba(212, 175, 55, 0.5);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .message-input:focus {
+      border-color: #F5E6BF;
+      background: rgba(212, 175, 55, 0.1);
+    }
+    .char-count {
+      position: absolute;
+      right: 12px;
+      bottom: 10px;
+      font-size: 0.75rem;
+      color: rgba(212, 175, 55, 0.5);
+    }
+    
     .btn {
       width: 100%;
       padding: 16px 32px;
@@ -421,22 +463,40 @@ function getUploadPageHTML() {
     .gallery-item {
       break-inside: avoid;
       margin-bottom: 12px;
-      border-radius: 12px;
+      border-radius: 8px;
       overflow: hidden;
-      background: rgba(0, 0, 0, 0.3);
+      background: #3d6b4f;
+      padding: 8px 8px 35px 8px;
       position: relative;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
+    .gallery-item.has-message { padding-bottom: 55px; }
     .gallery-item img {
       width: 100%;
       display: block;
       cursor: pointer;
       transition: transform 0.3s;
+      border-radius: 4px;
     }
     .gallery-item:hover img { transform: scale(1.02); }
-    .download-btn {
+    .gallery-message {
       position: absolute;
       bottom: 8px;
+      left: 8px;
       right: 8px;
+      font-family: 'Great Vibes', cursive;
+      font-size: 1rem;
+      color: #D4AF37;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    }
+    .download-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
       background: rgba(0, 0, 0, 0.7);
       color: #D4AF37;
       border: none;
@@ -536,6 +596,10 @@ function getUploadPageHTML() {
       <div class="preview-container" id="previewContainer">
         <img id="previewImage" class="preview-image" alt="预览">
       </div>
+      <div class="message-input-container" id="messageContainer">
+        <textarea id="messageInput" class="message-input" placeholder="留下给新郎新娘的祝福吧" maxlength="50" rows="2"></textarea>
+        <span class="char-count"><span id="charCount">0</span>/50</span>
+      </div>
       <button class="btn btn-primary" id="uploadBtn" disabled>
         <div class="progress-bg" id="progressBg"></div>
         <span class="btn-text" id="btnText">上树照片</span>
@@ -616,9 +680,10 @@ function getUploadPageHTML() {
         
         empty.style.display = 'none';
         grid.innerHTML = photos.map(p => \`
-          <div class="gallery-item">
+          <div class="gallery-item\${p.message ? ' has-message' : ''}">
             <img src="\${p.url}" alt="照片" onclick="openLightbox('\${p.url}')">
             <button class="download-btn" onclick="downloadPhoto('\${p.url}')">保存</button>
+            \${p.message ? \`<div class="gallery-message">\${p.message}</div>\` : ''}
           </div>
         \`).join('');
       } catch (e) {
@@ -672,14 +737,19 @@ function getUploadPageHTML() {
     const previewImage = document.getElementById('previewImage');
     const uploadBtn = document.getElementById('uploadBtn');
     const resetBtn = document.getElementById('resetBtn');
-    const progressContainer = document.getElementById('progressContainer');
-    const progressFill = document.getElementById('progressFill');
-    const progressText = document.getElementById('progressText');
+    const messageContainer = document.getElementById('messageContainer');
+    const messageInput = document.getElementById('messageInput');
+    const charCount = document.getElementById('charCount');
     const status = document.getElementById('status');
     let selectedFile = null;
 
     uploadArea.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', (e) => { if (e.target.files.length > 0) handleFile(e.target.files[0]); });
+    
+    // 字数统计
+    messageInput.addEventListener('input', () => {
+      charCount.textContent = messageInput.value.length;
+    });
 
     function handleFile(file) {
       if (!file.type.startsWith('image/')) { showStatus('请选择图片文件', 'error'); return; }
@@ -688,6 +758,7 @@ function getUploadPageHTML() {
       reader.onload = (e) => {
         previewImage.src = e.target.result;
         previewContainer.classList.add('show');
+        messageContainer.classList.add('show');
         uploadArea.style.display = 'none';
         uploadBtn.disabled = false;
         resetBtn.style.display = 'block';
@@ -700,10 +771,12 @@ function getUploadPageHTML() {
       selectedFile = null;
       fileInput.value = '';
       previewContainer.classList.remove('show');
+      messageContainer.classList.remove('show');
+      messageInput.value = '';
+      charCount.textContent = '0';
       uploadArea.style.display = 'block';
       uploadBtn.disabled = true;
       resetBtn.style.display = 'none';
-      progressContainer.classList.remove('show');
       status.classList.remove('show');
     });
 
@@ -719,6 +792,7 @@ function getUploadPageHTML() {
       
       const formData = new FormData();
       formData.append('photo', selectedFile);
+      formData.append('message', messageInput.value.trim());
       try {
         const xhr = new XMLHttpRequest();
         xhr.upload.addEventListener('progress', (e) => {
