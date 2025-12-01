@@ -39,17 +39,18 @@ export const Ornaments: React.FC<OrnamentsProps> = ({ mode, count, expandAmount 
     const height = 11; // Slightly smaller than foliage
     const maxRadius = 4.5;
     
-    // 金红绿配色 - 经典圣诞色（深色调）
-    const antiqueGold = new THREE.Color("#CFB53B");  // 古铜金
-    const oldGold = new THREE.Color("#CFB53B");      // 旧金色
-    const darkGold = new THREE.Color("#B8860B");     // 暗金色
-    const crimsonRed = new THREE.Color("#B22222");   // 砖红色
-    const darkRed = new THREE.Color("#8B0000");      // 暗红色
-    const hunterGreen = new THREE.Color("#355E3B");  // 猎人绿
-    const darkGreen = new THREE.Color("#2E5A2E");    // 深绿色
+    // 少女粉 + 深绿配色
+    const babyPink = new THREE.Color("#FFB6C1");      // 浅粉红
+    const sakuraPink = new THREE.Color("#FFB7C5");    // 樱花粉
+    const cottonCandy = new THREE.Color("#FFBCD9");   // 棉花糖粉
+    const petalPink = new THREE.Color("#FFC0CB");     // 花瓣粉
+    const darkForest = new THREE.Color("#1B4332");    // 深森林绿
+    const pineGreen = new THREE.Color("#2D5A3D");     // 松树绿
+    const emeraldDark = new THREE.Color("#1E5631");   // 深翡翠绿
+    const ivyGreen = new THREE.Color("#254D32");      // 常春藤绿
     
-    // 金红绿相间的调色板 - 深色调
-    const palette = [antiqueGold, crimsonRed, hunterGreen, oldGold, darkRed, darkGreen, darkGold, hunterGreen, antiqueGold, darkGreen];
+    // 少女粉 + 深绿调色板
+    const palette = [babyPink, darkForest, sakuraPink, pineGreen, cottonCandy, emeraldDark, petalPink, ivyGreen];
 
     for (let i = 0; i < count; i++) {
       const rnd = Math.random();
@@ -222,7 +223,7 @@ export const Ornaments: React.FC<OrnamentsProps> = ({ mode, count, expandAmount 
 
   return (
     <>
-      {/* Balls: 金红色金属球 - 高光泽 */}
+      {/* Balls: 粉绿色球 - 高光泽 */}
       <instancedMesh ref={ballsRef} args={[undefined, undefined, ballsData.length]}>
         <sphereGeometry args={[1, 32, 32]} />
         <meshStandardMaterial 
@@ -232,7 +233,7 @@ export const Ornaments: React.FC<OrnamentsProps> = ({ mode, count, expandAmount 
         />
       </instancedMesh>
 
-      {/* Gifts: 金红色礼物盒 */}
+      {/* Gifts: 粉绿色礼物盒 */}
       <instancedMesh ref={giftsRef} args={[undefined, undefined, giftsData.length]}>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial 

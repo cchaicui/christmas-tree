@@ -10,6 +10,7 @@ import { Ornaments } from './Ornaments';
 import { Polaroids, PolaroidsRef } from './Polaroids';
 import { TreeStar } from './TreeStar';
 import { Snow, Stars } from './Snow';
+// SpiralLights 已移除
 import { TreeMode } from '../types';
 import { Photo } from '../hooks/usePhotoSync';
 

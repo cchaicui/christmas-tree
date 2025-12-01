@@ -279,12 +279,10 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
         groupRef.current.rotation.z = currentRot.z + wobbleZ;
     }
 
-    // 明信片反光动画 - 缓慢从左到右扫过
+    // 外发光呼吸动画
     if (glowRef.current && isHighlighted) {
-      const sweepSpeed = 0.8;
-      const range = cardWidth * 1.2;
-      const newX = -range + ((time * sweepSpeed) % (range * 2));
-      glowRef.current.position.x = newX;
+      const pulse = 0.8 + Math.sin(time * 2) * 0.2;
+      glowRef.current.scale.set(pulse, pulse, 1);
     }
   });
 
@@ -317,40 +315,63 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
   return (
     <group ref={groupRef} scale={[scale, scale, scale]} onClick={handleClick}>
       <group position={[0, 0, 0]}>
-        {/* 明信片反光效果 - 倾斜的高光条 */}
+        {/* 渐变外发光效果 */}
         {isHighlighted && (
-          <group ref={glowRef} position={[0, 0, 0.035]} rotation={[0, 0, Math.PI * 0.15]}>
+          <group ref={glowRef} position={[0, 0, -0.02]}>
+            {/* 最外层光晕 */}
             <mesh>
-              <planeGeometry args={[0.15, cardHeight * 1.5]} />
+              <planeGeometry args={[cardWidth + 0.8, cardHeight + 0.8]} />
               <meshBasicMaterial 
-                color="#ffffff" 
+                color="#D4AF37" 
                 transparent 
-                opacity={0.4}
+                opacity={0.15}
                 blending={THREE.AdditiveBlending}
               />
             </mesh>
-            {/* 第二条更淡的反光 */}
-            <mesh position={[0.25, 0, 0]}>
-              <planeGeometry args={[0.08, cardHeight * 1.5]} />
+            {/* 中层光晕 */}
+            <mesh position={[0, 0, 0.005]}>
+              <planeGeometry args={[cardWidth + 0.5, cardHeight + 0.5]} />
+              <meshBasicMaterial 
+                color="#F5E6BF" 
+                transparent 
+                opacity={0.25}
+                blending={THREE.AdditiveBlending}
+              />
+            </mesh>
+            {/* 内层光晕 */}
+            <mesh position={[0, 0, 0.01]}>
+              <planeGeometry args={[cardWidth + 0.25, cardHeight + 0.25]} />
               <meshBasicMaterial 
                 color="#ffffff" 
                 transparent 
-                opacity={0.2}
+                opacity={0.35}
                 blending={THREE.AdditiveBlending}
               />
             </mesh>
           </group>
         )}
 
-        {/* 浅金色底板 - 添加指针样式 */}
+        {/* 发光底板 - 带光泽质感 */}
         <mesh position={[0, 0, 0]} onPointerOver={() => document.body.style.cursor = 'pointer'} onPointerOut={() => document.body.style.cursor = 'auto'}>
           <boxGeometry args={[cardWidth, cardHeight, 0.03]} />
           <meshStandardMaterial 
-            color="#F5E6BF"
-            metalness={0.4}
-            roughness={0.3}
-            emissive="#D4AF37"
-            emissiveIntensity={0.1}
+            color="#FFFEF5"
+            metalness={0.6}
+            roughness={0.15}
+            emissive="#FFFACD"
+            emissiveIntensity={0.25}
+            envMapIntensity={1.5}
+          />
+        </mesh>
+        
+        {/* 边缘发光效果 */}
+        <mesh position={[0, 0, -0.01]}>
+          <planeGeometry args={[cardWidth + 0.1, cardHeight + 0.1]} />
+          <meshBasicMaterial 
+            color="#FFFFEE"
+            transparent
+            opacity={0.4}
+            blending={THREE.AdditiveBlending}
           />
         </mesh>
 
