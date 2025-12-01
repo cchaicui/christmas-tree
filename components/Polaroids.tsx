@@ -315,36 +315,36 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
   return (
     <group ref={groupRef} scale={[scale, scale, scale]} onClick={handleClick}>
       <group position={[0, 0, 0]}>
-        {/* 渐变外发光效果 */}
+        {/* 弥散发光效果 - 3层柔和光晕（性能优化版） */}
         {isHighlighted && (
-          <group ref={glowRef} position={[0, 0, -0.02]}>
-            {/* 最外层光晕 */}
+          <group ref={glowRef} position={[0, 0, -0.03]}>
+            {/* 外层 - 大范围淡金光晕 */}
             <mesh>
-              <planeGeometry args={[cardWidth + 0.8, cardHeight + 0.8]} />
+              <planeGeometry args={[cardWidth + 1.5, cardHeight + 1.5]} />
               <meshBasicMaterial 
                 color="#D4AF37" 
+                transparent 
+                opacity={0.08}
+                blending={THREE.AdditiveBlending}
+              />
+            </mesh>
+            {/* 中层 */}
+            <mesh position={[0, 0, 0.005]}>
+              <planeGeometry args={[cardWidth + 0.7, cardHeight + 0.7]} />
+              <meshBasicMaterial 
+                color="#F5E6BF" 
                 transparent 
                 opacity={0.15}
                 blending={THREE.AdditiveBlending}
               />
             </mesh>
-            {/* 中层光晕 */}
-            <mesh position={[0, 0, 0.005]}>
-              <planeGeometry args={[cardWidth + 0.5, cardHeight + 0.5]} />
+            {/* 内层 - 贴近边缘 */}
+            <mesh position={[0, 0, 0.01]}>
+              <planeGeometry args={[cardWidth + 0.2, cardHeight + 0.2]} />
               <meshBasicMaterial 
-                color="#F5E6BF" 
+                color="#FFFEF5" 
                 transparent 
                 opacity={0.25}
-                blending={THREE.AdditiveBlending}
-              />
-            </mesh>
-            {/* 内层光晕 */}
-            <mesh position={[0, 0, 0.01]}>
-              <planeGeometry args={[cardWidth + 0.25, cardHeight + 0.25]} />
-              <meshBasicMaterial 
-                color="#ffffff" 
-                transparent 
-                opacity={0.35}
                 blending={THREE.AdditiveBlending}
               />
             </mesh>
@@ -425,12 +425,11 @@ export const Polaroids = forwardRef<PolaroidsRef, PolaroidsProps>(({ mode, photo
   const photoDataList = useMemo(() => {
     console.log('🖼️ Polaroids 收到照片:', photos.length);
     return photos.map((photo, index) => {
-      // 使用相对路径，让 Vite 代理处理
-      const url = photo.url.startsWith('http') ? photo.url : `http://localhost:3011${photo.url}`;
-      console.log(`  照片 ${index + 1}: ${url}`);
+      // URL 已经由 usePhotoSync 处理过，直接使用
+      console.log(`  照片 ${index + 1}: ${photo.url}`);
       return {
         id: photo.id,
-        url,
+        url: photo.url,
         chaosPos: calculateChaosPosition(index, photos.length),
         targetPos: calculateTargetPosition(index, photos.length),
         speed: 0.8 + Math.random() * 1.5,
@@ -470,7 +469,7 @@ export const Polaroids = forwardRef<PolaroidsRef, PolaroidsProps>(({ mode, photo
           mode={mode}
           isHighlighted={highlightPhotoId === data.id}
           totalPhotos={photos.length}
-          isFocusing={isFocusing && highlightPhotoId === data.id}
+          isFocusing={isFocusing}
           expandAmount={expandAmount}
           onPhotoClick={onPhotoClick}
         />
