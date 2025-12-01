@@ -83,7 +83,7 @@ export const Ornaments: React.FC<OrnamentsProps> = ({ mode, count, expandAmount 
         cR * Math.cos(cPhi)
       );
 
-      const scale = type === 'light' ? 0.15 : (0.2 + Math.random() * 0.25);
+      const scale = type === 'light' ? 0.15 : (0.22 + Math.random() * 0.28) * 1.1; // 放大1.1倍
       const color = type === 'light' ? new THREE.Color("#FFFFAA") : palette[Math.floor(Math.random() * palette.length)];
 
       const data: InstanceData = {

@@ -243,12 +243,12 @@ export const Experience: React.FC<ExperienceProps> = ({
       <group position={[0, -6, 0]} ref={treeGroupRef}>
         <Foliage 
           mode={mode} 
-          count={12000} 
+          count={3000} 
           expandAmount={focusState !== 'idle' ? 1.0 : 0}
         />
         <Ornaments 
           mode={mode} 
-          count={1200} 
+          count={600} 
           expandAmount={focusState !== 'idle' ? 1.0 : 0}
         />
         <Polaroids 
@@ -278,15 +278,9 @@ export const Experience: React.FC<ExperienceProps> = ({
       <Snow count={1500} />
       <Stars count={400} />
 
+      {/* 简化后处理 - 移除 Bloom 提升性能 */}
       <EffectComposer enableNormalPass={false}>
-        <Bloom 
-          luminanceThreshold={0.8} 
-          mipmapBlur 
-          intensity={1.5} 
-          radius={0.6}
-        />
         <Vignette eskil={false} offset={0.1} darkness={0.7} />
-        <Noise opacity={0.02} blendFunction={BlendFunction.OVERLAY} />
       </EffectComposer>
     </>
   );

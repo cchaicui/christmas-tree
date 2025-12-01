@@ -86,7 +86,12 @@ export default function App() {
 
 
   return (
-    <div className="w-full h-screen relative bg-gradient-to-b from-black via-[#001a0d] to-[#0a2f1e]">
+    <div 
+      className="w-full h-screen relative"
+      style={{
+        background: 'radial-gradient(ellipse at 50% 55%, #352D25 0%, #2a221c 40%, #1a1510 65%, #000000 100%)'
+      }}
+    >
       <ErrorBoundary>
         <Canvas
           dpr={[1, 2]}
