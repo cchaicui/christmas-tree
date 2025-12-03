@@ -125,8 +125,8 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
     if (isHighlighted && isFocusing && !hasStartedFocus.current) {
       hasStartedFocus.current = true;
       if (groupRef.current) {
-        // 从屏幕下方开始弹出，与目标位置相同的 x 和 z
-        groupRef.current.position.set(0, -2, 14);
+        // 从屏幕下方开始弹出
+        groupRef.current.position.set(0, -2, 18);
         console.log('🎯 照片开始从底部弹出', data.id);
       }
     }
@@ -194,10 +194,10 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
   
   const swayOffset = useMemo(() => Math.random() * 100, []);
 
-  // 聚焦时照片展示的位置 - 屏幕正中央
+  // 聚焦时照片展示的位置 - 屏幕正中央，在圣诞树前面
   // treeGroup 在 (0, -6, 0)，相机在 (0, 4, 20)
-  // 世界坐标 (0, 2, 14) = 本地坐标 (0, 8, 14)
-  const focusDisplayPos = useMemo(() => new THREE.Vector3(0, 8, 14), []);
+  // 本地坐标 (0, 8, 18) = 世界坐标 (0, 2, 18)，更靠近相机
+  const focusDisplayPos = useMemo(() => new THREE.Vector3(0, 8, 18), []);
   
   // 每张照片散开时的随机位置（在视野边缘，不遮挡聚焦照片）
   const scatterPos = useMemo(() => {

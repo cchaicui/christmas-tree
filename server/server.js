@@ -97,6 +97,11 @@ const io = new Server(httpServer, {
 let cloudPhotos = [];
 let photoCounter = 0;
 
+// 根路径 - 重定向到上传页面
+app.get('/', (req, res) => {
+  res.redirect('/upload.html');
+});
+
 // 健康检查端点
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() });

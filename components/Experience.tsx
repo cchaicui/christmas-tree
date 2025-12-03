@@ -139,11 +139,11 @@ export const Experience: React.FC<ExperienceProps> = ({
       }
       
       // 照片会移动到屏幕中央
-      // 照片本地 (0, 8, 14) + treeGroup (0, -6, 0) = 世界 (0, 2, 14)
-      const photoDisplayPos = new THREE.Vector3(0, 2, 14);
+      // 照片本地 (0, 8, 18) + treeGroup (0, -6, 0) = 世界 (0, 2, 18)
+      const photoDisplayPos = new THREE.Vector3(0, 2, 18);
       
       // 相机看向照片中心
-      targetCameraPos.current.set(0, 2, 20);
+      targetCameraPos.current.set(0, 2, 22);
       targetLookAt.current.copy(photoDisplayPos);
       
       // 开始聚焦
