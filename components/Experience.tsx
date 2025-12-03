@@ -139,11 +139,11 @@ export const Experience: React.FC<ExperienceProps> = ({
       }
       
       // 照片会移动到屏幕中央
-      // 照片本地 (0, 8, 18) + treeGroup (0, -6, 0) = 世界 (0, 2, 18)
-      const photoDisplayPos = new THREE.Vector3(0, 2, 18);
+      // 照片本地 (0, 10, 16) + treeGroup (0, -6, 0) = 世界 (0, 4, 16)
+      const photoDisplayPos = new THREE.Vector3(0, 4, 16);
       
-      // 相机看向照片中心
-      targetCameraPos.current.set(0, 2, 22);
+      // 相机保持原位，看向照片
+      targetCameraPos.current.set(0, 4, 20);
       targetLookAt.current.copy(photoDisplayPos);
       
       // 开始聚焦
@@ -251,12 +251,12 @@ export const Experience: React.FC<ExperienceProps> = ({
       <group position={[0, -6, 0]} ref={treeGroupRef}>
         <Foliage 
           mode={mode} 
-          count={3000} 
+          count={1500} 
           expandAmount={focusState !== 'idle' ? 1.0 : 0}
         />
         <Ornaments 
           mode={mode} 
-          count={600} 
+          count={300} 
           expandAmount={focusState !== 'idle' ? 1.0 : 0}
         />
         <Polaroids 
@@ -282,9 +282,9 @@ export const Experience: React.FC<ExperienceProps> = ({
         />
       </group>
 
-      {/* 下雪效果和星空 */}
-      <Snow count={1500} />
-      <Stars count={400} />
+      {/* 下雪效果和星空 - 减少数量提升性能 */}
+      <Snow count={500} />
+      <Stars count={150} />
 
       {/* 简化后处理 - 移除 Bloom 提升性能 */}
       <EffectComposer enableNormalPass={false}>

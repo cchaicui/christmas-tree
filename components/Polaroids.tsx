@@ -126,7 +126,7 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
       hasStartedFocus.current = true;
       if (groupRef.current) {
         // 从屏幕下方开始弹出
-        groupRef.current.position.set(0, -2, 18);
+        groupRef.current.position.set(0, 0, 16);
         console.log('🎯 照片开始从底部弹出', data.id);
       }
     }
@@ -194,10 +194,10 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
   
   const swayOffset = useMemo(() => Math.random() * 100, []);
 
-  // 聚焦时照片展示的位置 - 屏幕正中央，在圣诞树前面
+  // 聚焦时照片展示的位置 - 屏幕正中央
   // treeGroup 在 (0, -6, 0)，相机在 (0, 4, 20)
-  // 本地坐标 (0, 8, 18) = 世界坐标 (0, 2, 18)，更靠近相机
-  const focusDisplayPos = useMemo(() => new THREE.Vector3(0, 8, 18), []);
+  // 本地坐标 (0, 10, 16) = 世界坐标 (0, 4, 16)
+  const focusDisplayPos = useMemo(() => new THREE.Vector3(0, 10, 16), []);
   
   // 每张照片散开时的随机位置（在视野边缘，不遮挡聚焦照片）
   const scatterPos = useMemo(() => {
@@ -336,28 +336,10 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
           </mesh>
         )}
 
-        {/* 发光底板 - 带光泽质感 */}
+        {/* 简洁底板 - 性能优化 */}
         <mesh position={[0, 0, 0]} onPointerOver={() => document.body.style.cursor = 'pointer'} onPointerOut={() => document.body.style.cursor = 'auto'}>
           <boxGeometry args={[cardWidth, cardHeight, 0.03]} />
-          <meshStandardMaterial 
-            color="#FFFEF5"
-            metalness={0.6}
-            roughness={0.15}
-            emissive="#FFFACD"
-            emissiveIntensity={0.25}
-            envMapIntensity={1.5}
-          />
-        </mesh>
-        
-        {/* 边缘发光效果 */}
-        <mesh position={[0, 0, -0.01]}>
-          <planeGeometry args={[cardWidth + 0.1, cardHeight + 0.1]} />
-          <meshBasicMaterial 
-            color="#FFFFEE"
-            transparent
-            opacity={0.4}
-            blending={THREE.AdditiveBlending}
-          />
+          <meshBasicMaterial color="#F8F5E6" />
         </mesh>
 
         {/* 照片区域 - 保持原始宽高比 */}
@@ -366,24 +348,14 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
           {texture && !error ? (
             <meshBasicMaterial map={texture} />
           ) : (
-            <meshStandardMaterial 
-              color={error ? "#ff4444" : isLoading ? "#666666" : "#aaaaaa"} 
-              emissive={error ? "#ff0000" : "#333333"}
-              emissiveIntensity={0.2}
-            />
+            <meshBasicMaterial color={error ? "#ff4444" : isLoading ? "#888888" : "#aaaaaa"} />
           )}
         </mesh>
         
-        {/* 金色夹子 - 保持金色作为点缀 */}
+        {/* 金色夹子 - 简化材质 */}
         <mesh position={[0, clipY, 0.03]}>
           <boxGeometry args={[0.2, 0.1, 0.08]} />
-          <meshStandardMaterial 
-            color="#FFD700" 
-            metalness={1} 
-            roughness={0.15}
-            emissive="#FFD700"
-            emissiveIntensity={0.3}
-          />
+          <meshBasicMaterial color="#D4AF37" />
         </mesh>
 
         {/* 标签 - 优先显示留言，否则显示编号 */}
