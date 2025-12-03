@@ -155,14 +155,14 @@ export const Experience: React.FC<ExperienceProps> = ({
         controlsRef.current.enabled = false;
       }
       
-      // 5秒后回缩（测试用，之后改回30秒）
+      // 20秒后回缩
       if (focusTimerRef.current) {
         clearTimeout(focusTimerRef.current);
       }
       focusTimerRef.current = setTimeout(() => {
         console.log('⏰ 开始回缩动画');
         setFocusState('zooming_out');
-      }, 5000);
+      }, 20000);
     }
     
     return () => {
