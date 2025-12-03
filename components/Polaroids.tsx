@@ -142,8 +142,8 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
   // 优化图片 URL（Cloudinary 变换，加载较小的缩略图）
   const optimizedUrl = useMemo(() => {
     if (data.url.includes('cloudinary.com')) {
-      // 在 /upload/ 后添加变换参数：宽度200，质量60，格式webp（更快加载）
-      return data.url.replace('/upload/', '/upload/w_200,q_60,f_webp/');
+      // 在 /upload/ 后添加变换参数：宽度400，质量70，格式jpg（兼容性更好）
+      return data.url.replace('/upload/', '/upload/w_400,q_70,f_jpg/');
     }
     return data.url;
   }, [data.url]);

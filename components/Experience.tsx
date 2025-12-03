@@ -256,7 +256,7 @@ export const Experience: React.FC<ExperienceProps> = ({
         />
         <Ornaments 
           mode={mode} 
-          count={300} 
+          count={500} 
           expandAmount={focusState !== 'idle' ? 1.0 : 0}
         />
         <Polaroids 
