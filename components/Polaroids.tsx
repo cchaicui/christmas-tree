@@ -125,9 +125,8 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
     if (isHighlighted && isFocusing && !hasStartedFocus.current) {
       hasStartedFocus.current = true;
       if (groupRef.current) {
-        // 从屏幕下方开始：世界 y=-8 → 本地 y = -8 + 6 = -2
-        // z=12 在相机前面
-        groupRef.current.position.set(0, -2, 12);
+        // 从屏幕下方开始弹出，与目标位置相同的 x 和 z
+        groupRef.current.position.set(0, -2, 14);
         console.log('🎯 照片开始从底部弹出', data.id);
       }
     }
@@ -155,19 +154,20 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
     setIsLoading(true);
     setError(false);
     
+    console.log(`🖼️ 开始加载图片: ${optimizedUrl}`);
+    
     const loader = new THREE.TextureLoader();
-    // 设置跨域属性以支持 Cloudinary 图片
     loader.setCrossOrigin('anonymous');
     
     loader.load(
       optimizedUrl,
       (loadedTex) => {
         if (!mounted) return;
+        console.log(`✅ 图片加载成功: ${optimizedUrl}`);
         try {
           loadedTex.colorSpace = THREE.SRGBColorSpace;
           setTexture(loadedTex);
           setError(false);
-          // 获取图片原始宽高比
           if (loadedTex.image) {
             const ratio = loadedTex.image.width / loadedTex.image.height;
             setAspectRatio(ratio);
@@ -178,10 +178,12 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
         }
         setIsLoading(false);
       },
-      undefined,
+      (progress) => {
+        console.log(`📊 加载进度: ${optimizedUrl}`, progress);
+      },
       (err) => {
         if (!mounted) return;
-        console.warn(`图片加载失败: ${optimizedUrl}`, err);
+        console.error(`❌ 图片加载失败: ${optimizedUrl}`, err);
         setError(true);
         setIsLoading(false);
       }
@@ -192,17 +194,18 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
   
   const swayOffset = useMemo(() => Math.random() * 100, []);
 
-  // 聚焦时照片展示的位置 - 相机在 (0, 2, 19)，照片在 (0, 2, 12) 世界坐标
-  // treeGroup 在 (0, -6, 0)，本地坐标 = (0, 2+6, 12) = (0, 8, 12)
-  const focusDisplayPos = useMemo(() => new THREE.Vector3(0, 8, 12), []);
+  // 聚焦时照片展示的位置 - 屏幕正中央
+  // treeGroup 在 (0, -6, 0)，相机在 (0, 4, 20)
+  // 世界坐标 (0, 2, 14) = 本地坐标 (0, 8, 14)
+  const focusDisplayPos = useMemo(() => new THREE.Vector3(0, 8, 14), []);
   
-  // 每张照片散开时的随机位置（确保不会和聚焦照片重叠）
+  // 每张照片散开时的随机位置（在视野边缘，不遮挡聚焦照片）
   const scatterPos = useMemo(() => {
     const angle = Math.random() * Math.PI * 2;
-    const radius = 20 + Math.random() * 15;
-    const height = Math.random() * 25 - 10;
-    // z 值为负或很小，确保在相机后面/侧面，不会遮挡聚焦照片
-    const z = Math.sin(angle) * radius - 10;
+    const radius = 10 + Math.random() * 8; // 不要太远
+    const height = Math.random() * 15 - 5;
+    // z 值为负或较小，在照片后面
+    const z = Math.sin(angle) * radius * 0.5 - 8;
     return new THREE.Vector3(
       Math.cos(angle) * radius,
       height,
@@ -222,6 +225,7 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
     // 新上传的照片 && 正在聚焦
     const shouldFocus = isHighlighted && isFocusing;
     
+    
     if (shouldFocus) {
       // 被选中的照片：移到屏幕中央（世界坐标 z=15，在相机前面）
       targetPos = focusDisplayPos;
@@ -240,11 +244,15 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
     groupRef.current.position.lerp(targetPos, step);
 
     if (isHighlighted && isFocusing) {
-        // 聚焦时完全平面，正对相机（无透视）
-        // 目标旋转为 (0, 0, 0)，即照片平面正对 z 轴
-        const targetQuat = new THREE.Quaternion();
-        targetQuat.setFromEuler(new THREE.Euler(0, 0, 0));
-        groupRef.current.quaternion.slerp(targetQuat, delta * 5);
+        // 聚焦时正对相机（面向 +z 方向）
+        // 直接设置旋转为 0，快速对齐
+        groupRef.current.rotation.x *= 0.85;
+        groupRef.current.rotation.y *= 0.85;
+        groupRef.current.rotation.z *= 0.85;
+        // 接近 0 时直接设为 0
+        if (Math.abs(groupRef.current.rotation.x) < 0.01) groupRef.current.rotation.x = 0;
+        if (Math.abs(groupRef.current.rotation.y) < 0.01) groupRef.current.rotation.y = 0;
+        if (Math.abs(groupRef.current.rotation.z) < 0.01) groupRef.current.rotation.z = 0;
     } else if (expandAmount > 0.1 && !isHighlighted) {
         // 散开时随机旋转
         groupRef.current.rotation.x += delta * 0.5;
@@ -315,40 +323,17 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
   return (
     <group ref={groupRef} scale={[scale, scale, scale]} onClick={handleClick}>
       <group position={[0, 0, 0]}>
-        {/* 弥散发光效果 - 3层柔和光晕（性能优化版） */}
+        {/* 外发光效果 - 单层金色光晕 */}
         {isHighlighted && (
-          <group ref={glowRef} position={[0, 0, -0.03]}>
-            {/* 外层 - 大范围淡金光晕 */}
-            <mesh>
-              <planeGeometry args={[cardWidth + 1.5, cardHeight + 1.5]} />
-              <meshBasicMaterial 
-                color="#D4AF37" 
-                transparent 
-                opacity={0.08}
-                blending={THREE.AdditiveBlending}
-              />
-            </mesh>
-            {/* 中层 */}
-            <mesh position={[0, 0, 0.005]}>
-              <planeGeometry args={[cardWidth + 0.7, cardHeight + 0.7]} />
-              <meshBasicMaterial 
-                color="#F5E6BF" 
-                transparent 
-                opacity={0.15}
-                blending={THREE.AdditiveBlending}
-              />
-            </mesh>
-            {/* 内层 - 贴近边缘 */}
-            <mesh position={[0, 0, 0.01]}>
-              <planeGeometry args={[cardWidth + 0.2, cardHeight + 0.2]} />
-              <meshBasicMaterial 
-                color="#FFFEF5" 
-                transparent 
-                opacity={0.25}
-                blending={THREE.AdditiveBlending}
-              />
-            </mesh>
-          </group>
+          <mesh ref={glowRef} position={[0, 0, -0.02]}>
+            <planeGeometry args={[cardWidth + 0.6, cardHeight + 0.6]} />
+            <meshBasicMaterial 
+              color="#D4AF37" 
+              transparent 
+              opacity={0.3}
+              blending={THREE.AdditiveBlending}
+            />
+          </mesh>
         )}
 
         {/* 发光底板 - 带光泽质感 */}
@@ -420,6 +405,16 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
 
 export const Polaroids = forwardRef<PolaroidsRef, PolaroidsProps>(({ mode, photos, highlightPhotoId, isFocusing = false, expandAmount = 0, onPhotoClick }, ref) => {
   const photoRefs = useRef<Map<number, THREE.Group>>(new Map());
+  
+  // 调试：打印高亮状态
+  useEffect(() => {
+    if (highlightPhotoId !== null) {
+      console.log('🎯 Polaroids highlightPhotoId:', highlightPhotoId, 'isFocusing:', isFocusing);
+      console.log('📸 所有照片 IDs:', photos.map(p => p.id));
+      const found = photos.find(p => p.id === highlightPhotoId);
+      console.log('🔍 找到匹配照片:', found ? '是' : '否', found);
+    }
+  }, [highlightPhotoId, isFocusing, photos]);
 
   // 计算所有照片数据
   const photoDataList = useMemo(() => {

@@ -74,14 +74,14 @@ export const Ornaments: React.FC<OrnamentsProps> = ({ mode, count, expandAmount 
         r * Math.sin(theta)
       );
 
-      // 2. Chaos Position
-      const cR = 15 + Math.random() * 15;
+      // 2. Chaos Position - 散开但不要太远，保持在视野内
+      const cR = 8 + Math.random() * 7; // 8~15 范围
       const cTheta = Math.random() * Math.PI * 2;
       const cPhi = Math.acos(2 * Math.random() - 1);
       const chaosPos = new THREE.Vector3(
         cR * Math.sin(cPhi) * Math.cos(cTheta),
-        cR * Math.sin(cPhi) * Math.sin(cTheta) + 5,
-        cR * Math.cos(cPhi)
+        cR * Math.sin(cPhi) * Math.sin(cTheta) + 3,
+        cR * Math.cos(cPhi) - 5 // 稍微往后，不遮挡照片
       );
 
       const scale = type === 'light' ? 0.15 : (0.22 + Math.random() * 0.28) * 1.1; // 放大1.1倍

@@ -139,11 +139,11 @@ export const Experience: React.FC<ExperienceProps> = ({
       }
       
       // 照片会移动到屏幕中央
-      // 照片本地 (0, 8, 12) + treeGroup (0, -6, 0) = 世界 (0, 2, 12)
-      const photoDisplayPos = new THREE.Vector3(0, 2, 12);
+      // 照片本地 (0, 8, 14) + treeGroup (0, -6, 0) = 世界 (0, 2, 14)
+      const photoDisplayPos = new THREE.Vector3(0, 2, 14);
       
-      // 相机位置：在照片正前方，距离 5 单位
-      targetCameraPos.current.set(0, 2, 17);
+      // 相机看向照片中心
+      targetCameraPos.current.set(0, 2, 20);
       targetLookAt.current.copy(photoDisplayPos);
       
       // 开始聚焦
@@ -155,13 +155,14 @@ export const Experience: React.FC<ExperienceProps> = ({
         controlsRef.current.enabled = false;
       }
       
-      // 30秒后回缩
+      // 5秒后回缩（测试用，之后改回30秒）
       if (focusTimerRef.current) {
         clearTimeout(focusTimerRef.current);
       }
       focusTimerRef.current = setTimeout(() => {
+        console.log('⏰ 开始回缩动画');
         setFocusState('zooming_out');
-      }, 30000);
+      }, 5000);
     }
     
     return () => {
@@ -178,9 +179,13 @@ export const Experience: React.FC<ExperienceProps> = ({
       treeGroupRef.current.rotation.y += delta * 0.1;
     }
     
-    // 聚焦时，树慢慢转回正面
+    // 聚焦时，树快速转回正面（rotation.y = 0）
     if (treeGroupRef.current && focusState !== 'idle') {
-      treeGroupRef.current.rotation.y *= 0.9; // 逐渐归零
+      treeGroupRef.current.rotation.y *= 0.8; // 更快归零
+      // 接近 0 时直接设为 0
+      if (Math.abs(treeGroupRef.current.rotation.y) < 0.01) {
+        treeGroupRef.current.rotation.y = 0;
+      }
     }
     
     if (!controlsRef.current) return;
@@ -207,7 +212,9 @@ export const Experience: React.FC<ExperienceProps> = ({
       controlsRef.current.update();
       
       // 检查是否回到原位
-      if (camera.position.distanceTo(originalCameraPos.current) < 0.5) {
+      const dist = camera.position.distanceTo(originalCameraPos.current);
+      if (dist < 0.5) {
+        console.log('✅ 相机已回到原位，恢复 idle 状态');
         setFocusState('idle');
         setHighlightPhotoId(null);
         controlsRef.current.enabled = true;
