@@ -223,22 +223,35 @@ export const Ornaments: React.FC<OrnamentsProps> = ({ mode, count, expandAmount 
 
   return (
     <>
-      {/* Balls: 简化球体 - 减少面数提升性能 */}
+      {/* Balls: 粉绿色球 - 高光泽 */}
       <instancedMesh ref={ballsRef} args={[undefined, undefined, ballsData.length]}>
-        <sphereGeometry args={[1, 16, 16]} />
-        <meshBasicMaterial />
+        <sphereGeometry args={[1, 32, 32]} />
+        <meshStandardMaterial 
+          metalness={0.9}
+          roughness={0.1}
+          envMapIntensity={2.0}
+        />
       </instancedMesh>
 
-      {/* Gifts: 简化礼物盒 */}
+      {/* Gifts: 粉绿色礼物盒 */}
       <instancedMesh ref={giftsRef} args={[undefined, undefined, giftsData.length]}>
         <boxGeometry args={[1, 1, 1]} />
-        <meshBasicMaterial />
+        <meshStandardMaterial 
+          metalness={0.9}
+          roughness={0.15}
+          envMapIntensity={1.2}
+        />
       </instancedMesh>
 
-      {/* Lights: 简化发光球 */}
+      {/* Lights: Emissive small spheres */}
       <instancedMesh ref={lightsRef} args={[undefined, undefined, lightsData.length]}>
         <sphereGeometry args={[1, 8, 8]} />
-        <meshBasicMaterial color="white" />
+        <meshStandardMaterial 
+          emissive="white"
+          emissiveIntensity={2}
+          toneMapped={false}
+          color="white" // Tinted by instance color (yellowish)
+        />
       </instancedMesh>
     </>
   );

@@ -1,7 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { OrbitControls, ContactShadows, Environment } from '@react-three/drei';
 import { PMREMGenerator, Color, Scene as ThreeScene, Mesh, MeshBasicMaterial, SphereGeometry, BackSide } from 'three';
-// 后处理效果已移除以提升性能
+import { EffectComposer, Bloom, Vignette, Noise } from '@react-three/postprocessing';
+import { BlendFunction } from 'postprocessing';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Foliage } from './Foliage';
@@ -250,12 +251,12 @@ export const Experience: React.FC<ExperienceProps> = ({
       <group position={[0, -6, 0]} ref={treeGroupRef}>
         <Foliage 
           mode={mode} 
-          count={3000} 
+          count={1500} 
           expandAmount={focusState !== 'idle' ? 1.0 : 0}
         />
         <Ornaments 
           mode={mode} 
-          count={600} 
+          count={300} 
           expandAmount={focusState !== 'idle' ? 1.0 : 0}
         />
         <Polaroids 
@@ -281,9 +282,14 @@ export const Experience: React.FC<ExperienceProps> = ({
         />
       </group>
 
-      {/* 下雪效果和星空 */}
-      <Snow count={1500} />
-      <Stars count={400} />
+      {/* 下雪效果和星空 - 减少数量提升性能 */}
+      <Snow count={500} />
+      <Stars count={150} />
+
+      {/* 简化后处理 - 移除 Bloom 提升性能 */}
+      <EffectComposer enableNormalPass={false}>
+        <Vignette eskil={false} offset={0.1} darkness={0.7} />
+      </EffectComposer>
     </>
   );
 };
