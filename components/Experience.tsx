@@ -243,7 +243,7 @@ export const Experience: React.FC<ExperienceProps> = ({
       <group position={[0, -6, 0]} ref={treeGroupRef}>
         <Foliage 
           mode={mode} 
-          count={12000} 
+          count={6000} 
           expandAmount={focusState !== 'idle' ? 1.0 : 0}
         />
         <Ornaments 
