@@ -243,12 +243,12 @@ export const Experience: React.FC<ExperienceProps> = ({
       <group position={[0, -6, 0]} ref={treeGroupRef}>
         <Foliage 
           mode={mode} 
-          count={8000} 
+          count={12000} 
           expandAmount={focusState !== 'idle' ? 1.0 : 0}
         />
         <Ornaments 
           mode={mode} 
-          count={400} 
+          count={600} 
           expandAmount={focusState !== 'idle' ? 1.0 : 0}
         />
         <Polaroids 
@@ -275,8 +275,8 @@ export const Experience: React.FC<ExperienceProps> = ({
       </group>
 
       {/* 下雪效果和星空 */}
-      <Snow count={800} />
-      <Stars count={200} />
+      <Snow count={1500} />
+      <Stars count={400} />
 
       <EffectComposer enableNormalPass={false}>
         <Bloom 

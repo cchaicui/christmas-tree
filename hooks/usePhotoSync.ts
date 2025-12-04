@@ -86,12 +86,14 @@ export function usePhotoSync(): UsePhotoSyncReturn {
     loadServerInfo();
     loadExistingPhotos();
 
-    // 连接 WebSocket
+    // 连接 WebSocket（设置超时避免长时间等待）
     const socket = io(serverUrl, {
       transports: ['websocket', 'polling'],
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000
+      reconnectionAttempts: 3,
+      reconnectionDelay: 1000,
+      timeout: 5000, // 5秒超时
+      forceNew: false
     });
 
     socketRef.current = socket;
