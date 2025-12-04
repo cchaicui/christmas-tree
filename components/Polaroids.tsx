@@ -274,7 +274,7 @@ const PolaroidItem: React.FC<PolaroidItemProps> = ({ data, mode, isHighlighted, 
 
   // 根据照片总数自适应缩放，聚焦时适度放大
   const baseScale = calculateScale(totalPhotos);
-  const scale = (isHighlighted && isFocusing) ? 2.5 : baseScale; // 聚焦时放大2.5倍
+  const scale = (isHighlighted && isFocusing) ? 5 : baseScale; // 聚焦时放大5倍
 
   // 根据宽高比计算照片和卡片尺寸
   const maxPhotoSize = 1.2;
