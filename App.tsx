@@ -6,6 +6,21 @@ import { UIOverlay } from './components/UIOverlay';
 import { TreeMode } from './types';
 import { usePhotoSync } from './hooks/usePhotoSync';
 
+// 3D 加载动画
+const TreeLoader = () => (
+  <div className="absolute inset-0 flex items-center justify-center z-10">
+    <div className="text-center">
+      <div className="relative w-20 h-20 mx-auto mb-4">
+        {/* 旋转的圣诞树轮廓 */}
+        <div className="absolute inset-0 border-4 border-[#D4AF37]/30 rounded-full"></div>
+        <div className="absolute inset-0 border-4 border-transparent border-t-[#D4AF37] rounded-full animate-spin"></div>
+        <div className="absolute inset-2 border-4 border-transparent border-t-[#50C878] rounded-full animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+      </div>
+      <p className="text-[#D4AF37] font-serif text-lg">正在装饰圣诞树...</p>
+    </div>
+  </div>
+);
+
 // Error Boundary
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
   constructor(props: any) {
@@ -88,21 +103,23 @@ export default function App() {
   return (
     <div className="w-full h-screen relative bg-gradient-to-b from-black via-[#001a0d] to-[#0a2f1e]">
       <ErrorBoundary>
-        <Canvas
-          dpr={[1, 2]}
-          camera={{ position: [0, 4, 20], fov: 45 }}
-          gl={{ antialias: false, stencil: false, alpha: false }}
-          shadows
-        >
-          <Suspense fallback={null}>
-            <Experience 
-              mode={mode} 
-              photos={photos}
-              focusPhotoId={focusPhotoId}
-              onFocusComplete={handleFocusComplete}
-            />
-          </Suspense>
-        </Canvas>
+        <Suspense fallback={<TreeLoader />}>
+          <Canvas
+            dpr={[1, 2]}
+            camera={{ position: [0, 4, 20], fov: 45 }}
+            gl={{ antialias: false, stencil: false, alpha: false }}
+            shadows
+          >
+            <Suspense fallback={null}>
+              <Experience 
+                mode={mode} 
+                photos={photos}
+                focusPhotoId={focusPhotoId}
+                onFocusComplete={handleFocusComplete}
+              />
+            </Suspense>
+          </Canvas>
+        </Suspense>
       </ErrorBoundary>
       
       
