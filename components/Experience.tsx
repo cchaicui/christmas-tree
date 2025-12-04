@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { OrbitControls, ContactShadows, Environment } from '@react-three/drei';
+import { OrbitControls, ContactShadows } from '@react-three/drei';
 import { PMREMGenerator, Color, Scene as ThreeScene, Mesh, MeshBasicMaterial, SphereGeometry, BackSide } from 'three';
 import { EffectComposer, Bloom, Vignette, Noise } from '@react-three/postprocessing';
 import { BlendFunction } from 'postprocessing';
@@ -10,7 +10,6 @@ import { Ornaments } from './Ornaments';
 import { Polaroids, PolaroidsRef } from './Polaroids';
 import { TreeStar } from './TreeStar';
 import { Snow, Stars } from './Snow';
-// SpiralLights 已移除
 import { TreeMode } from '../types';
 import { Photo } from '../hooks/usePhotoSync';
 
@@ -139,11 +138,11 @@ export const Experience: React.FC<ExperienceProps> = ({
       }
       
       // 照片会移动到屏幕中央
-      // 照片本地 (0, 10, 16) + treeGroup (0, -6, 0) = 世界 (0, 4, 16)
-      const photoDisplayPos = new THREE.Vector3(0, 4, 16);
+      // 照片本地 (0, 8, 12) + treeGroup (0, -6, 0) = 世界 (0, 2, 12)
+      const photoDisplayPos = new THREE.Vector3(0, 2, 12);
       
-      // 相机保持原位，看向照片
-      targetCameraPos.current.set(0, 4, 20);
+      // 相机位置：在照片正前方，距离 5 单位
+      targetCameraPos.current.set(0, 2, 17);
       targetLookAt.current.copy(photoDisplayPos);
       
       // 开始聚焦
@@ -155,14 +154,13 @@ export const Experience: React.FC<ExperienceProps> = ({
         controlsRef.current.enabled = false;
       }
       
-      // 20秒后回缩
+      // 30秒后回缩
       if (focusTimerRef.current) {
         clearTimeout(focusTimerRef.current);
       }
       focusTimerRef.current = setTimeout(() => {
-        console.log('⏰ 开始回缩动画');
         setFocusState('zooming_out');
-      }, 20000);
+      }, 30000);
     }
     
     return () => {
@@ -179,13 +177,9 @@ export const Experience: React.FC<ExperienceProps> = ({
       treeGroupRef.current.rotation.y += delta * 0.1;
     }
     
-    // 聚焦时，树快速转回正面（rotation.y = 0）
+    // 聚焦时，树慢慢转回正面
     if (treeGroupRef.current && focusState !== 'idle') {
-      treeGroupRef.current.rotation.y *= 0.8; // 更快归零
-      // 接近 0 时直接设为 0
-      if (Math.abs(treeGroupRef.current.rotation.y) < 0.01) {
-        treeGroupRef.current.rotation.y = 0;
-      }
+      treeGroupRef.current.rotation.y *= 0.9; // 逐渐归零
     }
     
     if (!controlsRef.current) return;
@@ -212,9 +206,7 @@ export const Experience: React.FC<ExperienceProps> = ({
       controlsRef.current.update();
       
       // 检查是否回到原位
-      const dist = camera.position.distanceTo(originalCameraPos.current);
-      if (dist < 0.5) {
-        console.log('✅ 相机已回到原位，恢复 idle 状态');
+      if (camera.position.distanceTo(originalCameraPos.current) < 0.5) {
         setFocusState('idle');
         setHighlightPhotoId(null);
         controlsRef.current.enabled = true;
@@ -240,23 +232,23 @@ export const Experience: React.FC<ExperienceProps> = ({
         makeDefault
       />
 
-      {/* 使用本地 HDR 环境贴图 - 金属材质反射效果更好 */}
-      <Environment files="/envmaps/studio.hdr" background={false} />
+      {/* 程序化环境光 - 不需要下载 */}
+      <ProgrammaticEnvironment />
       
-      <ambientLight intensity={0.08} color="#ffffff" />
-      <directionalLight position={[10, 20, 10]} intensity={0.5} color="#fff8e8" />
-      <directionalLight position={[-10, 10, -10]} intensity={0.25} color="#D4AF37" />
-      <pointLight position={[0, 15, 0]} intensity={0.3} color="#ffffff" />
+      <ambientLight intensity={0.4} color="#ffffff" />
+      <directionalLight position={[10, 20, 10]} intensity={2} color="#ffffff" />
+      <directionalLight position={[-10, 10, -10]} intensity={1} color="#FFD700" />
+      <pointLight position={[0, 15, 0]} intensity={1.5} color="#ffffff" />
 
       <group position={[0, -6, 0]} ref={treeGroupRef}>
         <Foliage 
           mode={mode} 
-          count={1500} 
+          count={12000} 
           expandAmount={focusState !== 'idle' ? 1.0 : 0}
         />
         <Ornaments 
           mode={mode} 
-          count={500} 
+          count={600} 
           expandAmount={focusState !== 'idle' ? 1.0 : 0}
         />
         <Polaroids 
@@ -282,13 +274,19 @@ export const Experience: React.FC<ExperienceProps> = ({
         />
       </group>
 
-      {/* 下雪效果和星空 - 减少数量提升性能 */}
-      <Snow count={500} />
-      <Stars count={150} />
+      {/* 下雪效果和星空 */}
+      <Snow count={1500} />
+      <Stars count={400} />
 
-      {/* 简化后处理 - 移除 Bloom 提升性能 */}
       <EffectComposer enableNormalPass={false}>
+        <Bloom 
+          luminanceThreshold={0.8} 
+          mipmapBlur 
+          intensity={1.5} 
+          radius={0.6}
+        />
         <Vignette eskil={false} offset={0.1} darkness={0.7} />
+        <Noise opacity={0.02} blendFunction={BlendFunction.OVERLAY} />
       </EffectComposer>
     </>
   );

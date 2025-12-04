@@ -39,18 +39,16 @@ export const Ornaments: React.FC<OrnamentsProps> = ({ mode, count, expandAmount 
     const height = 11; // Slightly smaller than foliage
     const maxRadius = 4.5;
     
-    // 少女粉 + 深绿配色
-    const babyPink = new THREE.Color("#FFB6C1");      // 浅粉红
-    const sakuraPink = new THREE.Color("#FFB7C5");    // 樱花粉
-    const cottonCandy = new THREE.Color("#FFBCD9");   // 棉花糖粉
-    const petalPink = new THREE.Color("#FFC0CB");     // 花瓣粉
-    const darkForest = new THREE.Color("#1B4332");    // 深森林绿
-    const pineGreen = new THREE.Color("#2D5A3D");     // 松树绿
-    const emeraldDark = new THREE.Color("#1E5631");   // 深翡翠绿
-    const ivyGreen = new THREE.Color("#254D32");      // 常春藤绿
+    // 金红绿配色 - 经典圣诞色
+    const brightGold = new THREE.Color("#FFD700");   // 亮金色
+    const richGold = new THREE.Color("#FFC125");     // 橙金色
+    const crimsonRed = new THREE.Color("#DC143C");   // 深红色
+    const rubyRed = new THREE.Color("#9B111E");      // 宝石红
+    const emeraldGreen = new THREE.Color("#50C878"); // 翠绿色
+    const forestGreen = new THREE.Color("#228B22");  // 森林绿
     
-    // 少女粉 + 深绿调色板
-    const palette = [babyPink, darkForest, sakuraPink, pineGreen, cottonCandy, emeraldDark, petalPink, ivyGreen];
+    // 金红绿相间的调色板 - 多加绿色
+    const palette = [brightGold, crimsonRed, emeraldGreen, richGold, rubyRed, forestGreen, brightGold, emeraldGreen, crimsonRed, forestGreen];
 
     for (let i = 0; i < count; i++) {
       const rnd = Math.random();
@@ -74,17 +72,17 @@ export const Ornaments: React.FC<OrnamentsProps> = ({ mode, count, expandAmount 
         r * Math.sin(theta)
       );
 
-      // 2. Chaos Position - 散开但不要太远，保持在视野内
-      const cR = 8 + Math.random() * 7; // 8~15 范围
+      // 2. Chaos Position
+      const cR = 15 + Math.random() * 15;
       const cTheta = Math.random() * Math.PI * 2;
       const cPhi = Math.acos(2 * Math.random() - 1);
       const chaosPos = new THREE.Vector3(
         cR * Math.sin(cPhi) * Math.cos(cTheta),
-        cR * Math.sin(cPhi) * Math.sin(cTheta) + 3,
-        cR * Math.cos(cPhi) - 5 // 稍微往后，不遮挡照片
+        cR * Math.sin(cPhi) * Math.sin(cTheta) + 5,
+        cR * Math.cos(cPhi)
       );
 
-      const scale = type === 'light' ? 0.15 : (0.22 + Math.random() * 0.28) * 1.1; // 放大1.1倍
+      const scale = type === 'light' ? 0.15 : (0.2 + Math.random() * 0.25);
       const color = type === 'light' ? new THREE.Color("#FFFFAA") : palette[Math.floor(Math.random() * palette.length)];
 
       const data: InstanceData = {
@@ -223,17 +221,17 @@ export const Ornaments: React.FC<OrnamentsProps> = ({ mode, count, expandAmount 
 
   return (
     <>
-      {/* Balls: 粉绿色球 - 高光泽 */}
+      {/* Balls: 金红色金属球 - 高光泽 */}
       <instancedMesh ref={ballsRef} args={[undefined, undefined, ballsData.length]}>
         <sphereGeometry args={[1, 32, 32]} />
         <meshStandardMaterial 
-          metalness={0.9}
+          metalness={1.0}
           roughness={0.1}
-          envMapIntensity={2.0}
+          envMapIntensity={1.5}
         />
       </instancedMesh>
 
-      {/* Gifts: 粉绿色礼物盒 */}
+      {/* Gifts: 金红色礼物盒 */}
       <instancedMesh ref={giftsRef} args={[undefined, undefined, giftsData.length]}>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial 

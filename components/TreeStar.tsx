@@ -61,7 +61,7 @@ export const TreeStar: React.FC<TreeStarProps> = ({ mode, expandAmount = 0 }) =>
 
     const isFormed = mode === TreeMode.FORMED;
     const time = state.clock.elapsedTime;
-
+    
     // 平滑过渡散开值
     expandRef.current = THREE.MathUtils.lerp(expandRef.current, expandAmount, delta * 2);
     const currentExpand = expandRef.current;
